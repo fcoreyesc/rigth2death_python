@@ -31,5 +31,6 @@ def get_image_frames_y(width, height, img, frames):
 def img(name):
     return Constants.ROOT_DIR + '/../resources/img/characters/zombies/{}'.format(name)
 
+
 def img_player(name):
     return Constants.ROOT_DIR + '/../resources/img/characters/player/{}'.format(name)

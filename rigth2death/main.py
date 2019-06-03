@@ -1,10 +1,11 @@
 import pygame
-from pygame import Color
 from pygame.constants import KEYDOWN, K_ESCAPE, KEYUP
 from pygame.surface import Surface
 
+import Constants
 from rigth2death.characters import Player
 from rigth2death.utils import Utils
+from scenarios.Stages import TiledMap, Camera
 
 
 def run():
@@ -14,11 +15,20 @@ def run():
     clock: pygame.time.Clock = pygame.time.Clock()
     zombie = Player.CustomSprite(Utils.img('zombies.png'), clock, 5, is_vertical=False)
     player = Player.Player(clock)
+    stage = TiledMap(Constants.MAPS + "mapa_z.tmx")
 
+    camara = Camera(stage.width, stage.height)
+    image_map = stage.make_map()
+    stage_rect = image_map.get_rect()
     moves = []
+    print("blockers {}".format(stage.blockers))
+    asd = 0
+    ysd = 0
     while running:
         clock.tick(60)
-        screen.fill(Color('black'))
+        screen.fill(pygame.Color('black'))
+
+        # screen.blit(image_map, (0 - asd, 0 - ysd))
 
         # for loop through the event queue
         for event in pygame.event.get():
@@ -28,9 +38,7 @@ def run():
                 if event.key == K_ESCAPE:
                     running = False
                 moves.append(event.key)
-                print(moves)
             if event.type == KEYUP:
-                print("leave keyup")
                 if event.key in moves:
                     moves.remove(event.key)
             # Check for QUIT event; if QUIT, set running to false
@@ -38,15 +46,15 @@ def run():
                 running = False
         if len(moves) > 0:
             a = moves.pop()
-            print("I entered {}".format(a))
             player.move(a)
             moves.append(a)
 
         # Draw the player to the screen
         # Update the display
-
-        screen.blit(player.current_sprite.image, player.current_sprite.rect)
-        screen.blit(zombie.image, (360, 360))
+        camara.update(player.current_sprite)
+        screen.blit(image_map, camara.apply_rect(stage_rect))
+        screen.blit(player.current_sprite.image, camara.apply(player.current_sprite))
+        screen.blit(zombie.image, camara.apply(zombie))
 
         zombie.play()
         pygame.display.flip()

@@ -10,20 +10,19 @@ from scenarios.Stages import TiledMap, Camera
 
 def run():
     pygame.init()
-    screen: Surface = pygame.display.set_mode((800, 600))
+    screen: Surface = pygame.display.set_mode((Constants.WIDTH, Constants.HEIGHT))
     running = True
     clock: pygame.time.Clock = pygame.time.Clock()
-    zombie = Player.CustomSprite(Utils.img('zombies.png'), clock, 5, is_vertical=False)
-    player = Player.Player(clock)
+    zombie = Player.CustomSprite(Utils.img('zombies.png'), 5, is_vertical=False)
+    player = Player.Player()
     stage = TiledMap(Constants.MAPS + "mapa_z.tmx")
 
-    camara = Camera(stage.width, stage.height)
+    camera = Camera(stage.width, stage.height)
     image_map = stage.make_map()
     stage_rect = image_map.get_rect()
     moves = []
     print("blockers {}".format(stage.blockers))
-    asd = 0
-    ysd = 0
+
     while running:
         clock.tick(60)
         screen.fill(pygame.Color('black'))
@@ -51,10 +50,10 @@ def run():
 
         # Draw the player to the screen
         # Update the display
-        camara.update(player.current_sprite)
-        screen.blit(image_map, camara.apply_rect(stage_rect))
-        screen.blit(player.current_sprite.image, camara.apply(player.current_sprite))
-        screen.blit(zombie.image, camara.apply(zombie))
+        camera.update(player.current_sprite)
+        screen.blit(image_map, camera.apply_rect(stage_rect))
+        screen.blit(player.current_sprite.image, camera.apply(player.current_sprite))
+        screen.blit(zombie.image, camera.apply(zombie))
 
         zombie.play()
         pygame.display.flip()

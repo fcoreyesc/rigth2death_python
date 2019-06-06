@@ -1,6 +1,8 @@
 import pygame
 from pytmx import pytmx, load_pygame
 
+import Constants
+
 
 class Camera:
     def __init__(self, width, height):
@@ -15,14 +17,14 @@ class Camera:
         return rect.move(self.camera.topleft)
 
     def update(self, target):
-        x = -target.rect.centerx + int(800 / 2)
-        y = -target.rect.centery + int(600 / 2)
+        x = -target.rect.centerx + int(Constants.WIDTH / 2)
+        y = -target.rect.centery + int(Constants.HEIGHT / 2)
 
         # limit scrolling to map size
         x = min(0, x)  # left
         y = min(0, y)  # top
-        x = max(-(self.width - 800), x)  # right
-        y = max(-(self.height - 600), y)  # bottom
+        x = max(-(self.width - Constants.WIDTH), x)  # right
+        y = max(-(self.height - Constants.HEIGHT), y)  # bottom
         self.camera = pygame.Rect(x, y, self.width, self.height)
 
 
@@ -31,20 +33,20 @@ class TiledMap:
         tm = load_pygame(filename, pixelalpha=True)
         self.width = tm.width * tm.tilewidth
         self.height = tm.height * tm.tileheight
-        self.tmxdata = tm
+        self.tmx_data = tm
         self.blockers = []
 
     def render(self, surface):
-        ti = self.tmxdata.get_tile_image_by_gid
-        for layer in self.tmxdata.visible_layers:
+        ti = self.tmx_data.get_tile_image_by_gid
+        for layer in self.tmx_data.visible_layers:
             if isinstance(layer, pytmx.TiledTileLayer):
                 if "block" in layer.name:
                     self.blockers.append(layer)
                 for x, y, gid, in layer:
                     tile = ti(gid)
                     if tile:
-                        surface.blit(tile, (x * self.tmxdata.tilewidth,
-                                            y * self.tmxdata.tileheight))
+                        surface.blit(tile, (x * self.tmx_data.tilewidth,
+                                            y * self.tmx_data.tileheight))
 
     def make_map(self):
         temp_surface = pygame.Surface((self.width, self.height))

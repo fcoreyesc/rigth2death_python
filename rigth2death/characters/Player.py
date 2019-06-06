@@ -15,10 +15,9 @@ def load_image(fileName, useColorKey=False):
 
 
 class CustomSprite(pygame.sprite.Sprite):
-    def __init__(self, filename, clock, frames=1, is_vertical=True):
+    def __init__(self, filename, frames=1, is_vertical=True):
         pygame.sprite.Sprite.__init__(self)
         self.images = []
-        self.clock = clock
         self.speed = 10
         img = load_image(filename)
 
@@ -54,20 +53,12 @@ class CustomSprite(pygame.sprite.Sprite):
 
     def play(self):
 
-        # self.sum_refresh += self.clock.get_time()
-        # if self.sum_refresh < self.refresh_time:
-        #    return
-
         self.sum_refresh = 0
 
         self.currentImage += 1
         if self.currentImage == self.sequence:
             self.currentImage = 0
 
-        # if self.angle == 0 and self.scale == 1:
-        #     self.image = self.images[index]
-        # else:
-        #     self.image = pygame.transform.rotozoom(self.images[self.currentImage], -self.angle, self.scale)
         self.update_image_vars()
 
     def update_image_vars(self):
@@ -100,11 +91,11 @@ class CustomSprite(pygame.sprite.Sprite):
 
 
 class Player:
-    def __init__(self, clock):
-        self.movement_sprites = {K_UP: CustomSprite(Utils.img_player('arriba.png'), clock, 8),
-                                 K_DOWN: CustomSprite(Utils.img_player('abajo.png'), clock, 8),
-                                 K_LEFT: CustomSprite(Utils.img_player('derecha.png'), clock, 7).flip(horizontal=True),
-                                 K_RIGHT: CustomSprite(Utils.img_player('derecha.png'), clock, 7)}
+    def __init__(self):
+        self.movement_sprites = {K_UP: CustomSprite(Utils.img_player('arriba.png'), 8),
+                                 K_DOWN: CustomSprite(Utils.img_player('abajo.png'), 8),
+                                 K_LEFT: CustomSprite(Utils.img_player('derecha.png'), 7).flip(horizontal=True),
+                                 K_RIGHT: CustomSprite(Utils.img_player('derecha.png'), 7)}
         self.current_k_sprite = K_RIGHT
         self.current_sprite = self.movement_sprites.get(self.current_k_sprite)
         self.speed = 5

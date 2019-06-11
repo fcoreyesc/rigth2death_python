@@ -1,31 +1,35 @@
 import pygame
-from pygame.constants import KEYDOWN, K_ESCAPE, KEYUP
+from pygame.constants import KEYDOWN, K_ESCAPE, KEYUP, K_LEFT, K_RIGHT, K_UP, K_DOWN, K_SPACE
 from pygame.surface import Surface
 
 import Constants
+from items.Weapon import Bullet
 from rigth2death.characters import Player
 from rigth2death.utils import Utils
 from scenarios.Stages import TiledMap, Camera
+from utils.CustomSprite import CustomSprite
 
 
 def run():
+    allowed_moves = [K_LEFT, K_RIGHT, K_UP, K_DOWN, K_SPACE]
+
     pygame.init()
-    screen: Surface = pygame.display.set_mode((800, 600))
+    screen: Surface = pygame.display.set_mode((Constants.WIDTH, Constants.HEIGHT))
     running = True
     clock: pygame.time.Clock = pygame.time.Clock()
-    zombie = Player.CustomSprite(Utils.img('zombies.png'), clock, 5, is_vertical=False)
-    player = Player.Player(clock)
+    zombie = CustomSprite(Utils.img('zombies.png'), 5, is_vertical=False)
+    player = Player.Player()
     stage = TiledMap(Constants.MAPS + "mapa_z.tmx")
 
-    camara = Camera(stage.width, stage.height)
+    camera = Camera(stage.width, stage.height)
     image_map = stage.make_map()
     stage_rect = image_map.get_rect()
     moves = []
+    bullets = []
     print("blockers {}".format(stage.blockers))
-    asd = 0
-    ysd = 0
+
     while running:
-        clock.tick(60)
+        fps = clock.tick(60) / 1000
         screen.fill(pygame.Color('black'))
 
         # screen.blit(image_map, (0 - asd, 0 - ysd))
@@ -37,7 +41,8 @@ def run():
                 # If the Esc key has been pressed set running to false to exit the main loop
                 if event.key == K_ESCAPE:
                     running = False
-                moves.append(event.key)
+                if event.key in allowed_moves:
+                    moves.append(event.key)
             if event.type == KEYUP:
                 if event.key in moves:
                     moves.remove(event.key)
@@ -46,15 +51,24 @@ def run():
                 running = False
         if len(moves) > 0:
             a = moves.pop()
-            player.move(a)
+            possible_bullet = player.move(a)
+            if isinstance(possible_bullet, Bullet):
+                bullets.append(possible_bullet)
             moves.append(a)
 
         # Draw the player to the screen
         # Update the display
-        camara.update(player.current_sprite)
-        screen.blit(image_map, camara.apply_rect(stage_rect))
-        screen.blit(player.current_sprite.image, camara.apply(player.current_sprite))
-        screen.blit(zombie.image, camara.apply(zombie))
+        camera.update(player.current_sprite)
+        screen.blit(image_map, camera.apply_rect(stage_rect))
+        screen.blit(player.current_sprite.image, camera.apply(player.current_sprite))
+        screen.blit(zombie.image, camera.apply(zombie))
+
+        for bullet in bullets:
+            if bullet.exist():
+                bullet.move(fps)
+                screen.blit(bullet.sprite.image, camera.apply(bullet.sprite))
+            else:
+                bullets.remove(bullet)
 
         zombie.play()
         pygame.display.flip()

@@ -33,3 +33,7 @@ def img(name):
 
 def img_player(name):
     return Constants.ROOT_DIR + '/../resources/img/characters/player/{}'.format(name)
+
+
+def img_player_stuffs(name):
+    return img_player("../others/{}".format(name))

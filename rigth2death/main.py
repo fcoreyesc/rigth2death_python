@@ -62,6 +62,8 @@ def run():
         screen.blit(image_map, camera.apply_rect(stage_rect))
         screen.blit(player.current_sprite.image, camera.apply(player.current_sprite))
         screen.blit(zombie.image, camera.apply(zombie))
+        screen.blit(player.life_sprite.image, (Constants.WIDTH - player.life_sprite.originalWidth,
+                                               0))
 
         for bullet in bullets:
             if bullet.exist():

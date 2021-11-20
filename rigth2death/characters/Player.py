@@ -3,6 +3,7 @@ import time
 import pygame
 from pygame.constants import K_RIGHT, K_LEFT, K_DOWN, K_UP, K_SPACE
 
+import Constants
 from Constants import DIRECTIONS
 from items.Weapon import Weapon
 from utils import Utils
@@ -11,14 +12,18 @@ from utils.CustomSprite import CustomSprite
 
 class Player:
     def __init__(self):
+        self.life_sprite = CustomSprite(Utils.img_player_stuffs('life.png'), 10)
+
         self.movement_sprites = {K_UP: CustomSprite(Utils.img_player('arriba.png'), 8),
                                  K_DOWN: CustomSprite(Utils.img_player('abajo.png'), 8),
                                  K_LEFT: CustomSprite(Utils.img_player('derecha.png'), 7).flip(horizontal=True),
                                  K_RIGHT: CustomSprite(Utils.img_player('derecha.png'), 7)}
+
         self.current_k_sprite = K_RIGHT
         self.current_sprite = self.movement_sprites.get(self.current_k_sprite)
         self.speed = 5
         self.last_shoot = int(round(time.time() * 1000))
+        self.life = 100
 
     def move(self, key):
 

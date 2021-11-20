@@ -44,13 +44,10 @@ class CustomSprite(pygame.sprite.Sprite):
     def play(self, dt=None):
 
         if dt is not None:
-            print("DT {}".format(dt))
             if self.sum_refresh > self.refresh_time:
                 self.sum_refresh = 0
-                print("dibujo {}".format(self))
             else:
                 self.sum_refresh += dt
-                print("no dibujo na {}".format(self))
                 return
 
         self.currentImage += 1

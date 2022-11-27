@@ -9,7 +9,6 @@ class CustomSprite(pygame.sprite.Sprite):
     def __init__(self, filename, frames=1, is_vertical=True):
         pygame.sprite.Sprite.__init__(self)
         self.images = []
-        self.speed = 10
         img = load_image(filename)
 
         if is_vertical:
@@ -33,7 +32,7 @@ class CustomSprite(pygame.sprite.Sprite):
         self.refresh_time = 0.05
         self.sum_refresh = 0
 
-    def addImage(self, filename):
+    def add_image(self, filename):
         self.images.append(load_image(filename))
 
     def move(self, xpos: int, ypos: int):
@@ -81,15 +80,21 @@ class CustomSprite(pygame.sprite.Sprite):
         self.images = new_images
         return self
 
-    def x(self):
-        return self.rect.x
+    def x(self, x=None) -> int:
+        if x:
+            self.rect.x = x
+        else:
+            return self.rect.x
 
-    def y(self):
-        return self.rect.y
+    def y(self, y=None):
+        if y:
+            self.rect.y = y
+        else:
+            return self.rect.y
 
 
-def load_image(fileName, useColorKey=False):
-    if os.path.isfile(fileName):
-        return pygame.image.load(fileName).convert_alpha()
+def load_image(file_name, use_color_key=False):
+    if os.path.isfile(file_name):
+        return pygame.image.load(file_name).convert_alpha()
     else:
-        raise Exception("Error loading image: " + fileName + " - Check filename and path?")
+        raise Exception("Error loading image: " + file_name + " - Check filename and path?")

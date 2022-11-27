@@ -21,6 +21,7 @@ class Player:
 
         self.current_k_sprite = K_RIGHT
         self.current_sprite = self.movement_sprites.get(self.current_k_sprite)
+        self.current_sprite.move(400, 400)
         self.speed = 5
         self.last_shoot = int(round(time.time() * 1000))
         self.life = 100

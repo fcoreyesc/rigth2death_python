@@ -6,7 +6,7 @@ class Weapon:
 
     def __init__(self):
         self.name = ""
-        self.cadency = 5
+        self.cadence = 5
         self.bullets = 100
         self.distance = 10
 

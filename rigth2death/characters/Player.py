@@ -3,7 +3,6 @@ import time
 import pygame
 from pygame.constants import K_RIGHT, K_LEFT, K_DOWN, K_UP, K_SPACE
 
-import Constants
 from Constants import DIRECTIONS
 from items.Weapon import Weapon
 from utils import Utils
@@ -21,12 +20,12 @@ class Player:
 
         self.current_k_sprite = K_RIGHT
         self.current_sprite = self.movement_sprites.get(self.current_k_sprite)
+        self.current_sprite.move(400, 400)
         self.speed = 5
         self.last_shoot = int(round(time.time() * 1000))
         self.life = 100
 
     def move(self, key):
-
         if K_SPACE == key:
             new_shoot = int(round(time.time() * 1000)) - self.last_shoot
             if new_shoot > 250:
@@ -42,8 +41,10 @@ class Player:
 
         if key != self.current_k_sprite:
             self.current_k_sprite = key
+
             selected_sprite.rect.x = self.current_sprite.x()
             selected_sprite.rect.y = self.current_sprite.y()
+
             self.current_sprite = selected_sprite
             self.current_sprite.init_image_vars()
 
@@ -52,9 +53,9 @@ class Player:
         elif key == K_DOWN:
             self.current_sprite.move(self.current_sprite.x(), self.current_sprite.y() + self.speed)
         elif key == K_RIGHT:
-            self.current_sprite.move(self.current_sprite.x() + self.speed, self.current_sprite.y())
+            self.current_sprite.move(self.current_sprite.x() + self.speed + 2, self.current_sprite.y())
         elif key == K_LEFT:
-            self.current_sprite.move(self.current_sprite.x() - self.speed, self.current_sprite.y())
+            self.current_sprite.move(self.current_sprite.x() - self.speed - 2, self.current_sprite.y())
 
         self.current_sprite.play()
 

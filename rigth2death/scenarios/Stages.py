@@ -10,15 +10,15 @@ from items.Weapon import Bullet
 
 class Camera:
     def __init__(self, width, height):
-        self.camera = pygame.Rect(0, 0, width, height)
+        self.rectangle = pygame.Rect(0, 0, width, height)
         self.width = width
         self.height = height
 
     def apply(self, entity):
-        return entity.rect.move(self.camera.topleft)
+        return entity.rect.move(self.rectangle.topleft)
 
     def apply_rect(self, rect):
-        return rect.move(self.camera.topleft)
+        return rect.move(self.rectangle.topleft)
 
     def update(self, target):
         x = -target.rect.centerx + int(Constants.WIDTH / 2)
@@ -29,7 +29,7 @@ class Camera:
         y = min(0, y)  # top
         x = max(-(self.width - Constants.WIDTH), x)  # right
         y = max(-(self.height - Constants.HEIGHT), y)  # bottom
-        self.camera = pygame.Rect(x, y, self.width, self.height)
+        self.rectangle = pygame.Rect(x, y, self.width, self.height)
 
 
 class TiledMap:
@@ -63,40 +63,61 @@ class Stage:
     def __init__(self, allowed_moves, player: Player, zombies: EnemyGroup, screen: Surface):
         self.player: Player = player
         self.zombies = zombies
-        self.map = None
         self.bullets = []
         self.moves = []
         self.allowed_moves = allowed_moves
+        self.running = True
 
         self.screen: Surface = screen
-        self.stage = TiledMap(Constants.MAPS + "mapa_z.tmx")
+        self.map = TiledMap(Constants.MAPS + "mapa_z.tmx")
 
-        self.camera = Camera(self.stage.width, self.stage.height)
-        self.image_map = self.stage.make_map()
+        self.camera = Camera(self.map.width, self.map.height)
+        self.image_map = self.map.make_map()
         self.stage_rect = self.image_map.get_rect()
 
     def run(self):
-        self.screen.fill(pygame.Color('black'))
-        pygame.time.delay(70)
-        # screen.fill
+        while self.running:
+            self.clear_display()
+            pygame.time.delay(70)
 
-        # screen.blit(image_map, (0 - asd, 0 - ysd))
+            self.process_user_input()
+            self.process_player_moves()
+            self.move_camera_and_paint()
+            self.process_zombies()
+            self.process_shoots()
 
-        # for loop through the event queue
+            self.draw_things()
+            self.swap_display()
+
+    @staticmethod
+    def swap_display():
+        pygame.display.update()
+
+    def draw_things(self):
+        self.screen.blit(self.player.life_sprite.image, (Constants.WIDTH - self.player.life_sprite.originalWidth, 0))
+
+    def clear_display(self):
+        self.screen.fill((0, 0, 0))
+
+    def process_user_input(self):
         for event in pygame.event.get():
-            # Check for KEYDOWN event; KEYDOWN is a constant defined in pygame.locals, which we imported earlier
             if event.type == KEYDOWN:
-                # If the Esc key has been pressed set running to false to exit the main loop
                 if event.key == K_ESCAPE:
-                    running = False
+                    self.running = False
                 if event.key in self.allowed_moves:
                     self.moves.append(event.key)
             if event.type == KEYUP:
                 if event.key in self.moves:
                     self.moves.remove(event.key)
-            # Check for QUIT event; if QUIT, set running to false
             elif event.type == pygame.QUIT:
-                running = False
+                self.running = False
+
+    def move_camera_and_paint(self):
+        self.camera.update(self.player.current_sprite)
+        self.screen.blit(self.image_map, self.camera.apply_rect(self.stage_rect))
+        self.screen.blit(self.player.current_sprite.image, self.camera.apply(self.player.current_sprite))
+
+    def process_player_moves(self):
         if len(self.moves) > 0:
             a = self.moves.pop()
             possible_bullet = self.player.move(a)
@@ -104,19 +125,7 @@ class Stage:
                 self.bullets.append(possible_bullet)
             self.moves.append(a)
 
-        # Draw the player to the screen
-        # Update the display
-        self.camera.update(self.player.current_sprite)
-        self.screen.blit(self.image_map, self.camera.apply_rect(self.stage_rect))
-        self.screen.blit(self.player.current_sprite.image, self.camera.apply(self.player.current_sprite))
-
-        for zombie in self.zombies.list:
-            zombie.move_sprite(self.player.current_sprite)
-            self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
-            zombie.sprite.play()
-
-        self.screen.blit(self.player.life_sprite.image, (Constants.WIDTH - self.player.life_sprite.originalWidth, 0))
-
+    def process_shoots(self):
         for bullet in self.bullets:
             if bullet.exist():
                 bullet.move(19)
@@ -124,4 +133,8 @@ class Stage:
             else:
                 self.bullets.remove(bullet)
 
-        pygame.display.flip()
+    def process_zombies(self) -> None:
+        for zombie in self.zombies.list:
+            zombie.move_sprite(self.player.current_sprite)
+            self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
+            zombie.sprite.play()

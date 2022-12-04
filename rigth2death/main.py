@@ -13,17 +13,13 @@ def run():
     pygame.init()
     screen: Surface = pygame.display.set_mode((Constants.WIDTH, Constants.HEIGHT))
     zombies = EnemyGroup()
-    running = True
-    clock: pygame.time.Clock = pygame.time.Clock()
 
     player = Player.Player()
-    for _ in range(10):
+    for _ in range(0):
         zombies.add(ZombieFactory.generate())
 
     stage = Stage(allowed_moves, player, zombies, screen)
-
-    while running:
-        stage.run()
+    stage.run()
 
 
 if __name__ == '__main__':

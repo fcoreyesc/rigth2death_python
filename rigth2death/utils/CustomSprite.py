@@ -36,7 +36,6 @@ class CustomSprite(pygame.sprite.Sprite):
         self.images.append(load_image(filename))
 
     def move(self, xpos: int, ypos: int):
-        # print("x = {} y = {}".format(xpos, ypos))
         self.rect.x = xpos
         self.rect.y = ypos
 
@@ -57,12 +56,6 @@ class CustomSprite(pygame.sprite.Sprite):
 
     def update_image_vars(self):
         self.image = self.images[self.currentImage]
-        old_center = self.rect.center
-        self.rect = self.image.get_rect()
-        self.originalWidth = self.rect.width
-        self.originalHeight = self.rect.height
-        self.rect.center = old_center
-        self.mask = pygame.mask.from_surface(self.image)
 
     def init_image_vars(self):
         self.currentImage = 0
@@ -93,8 +86,8 @@ class CustomSprite(pygame.sprite.Sprite):
             return self.rect.y
 
 
-def load_image(file_name, use_color_key=False):
+def load_image(file_name):
     if os.path.isfile(file_name):
         return pygame.image.load(file_name).convert_alpha()
     else:
-        raise Exception("Error loading image: " + file_name + " - Check filename and path?")
+        raise FileNotFoundError("Error loading image: " + file_name + " - Check filename and path?")

@@ -1,7 +1,9 @@
+import random
 from enum import Enum
 
 import pygame
 
+import Constants
 from utils import Utils
 from utils.CustomSprite import CustomSprite
 
@@ -12,9 +14,6 @@ class ZombieType(Enum):
 
 
 class ZombieFactory:
-
-    def __init__(self):
-        pass
 
     @staticmethod
     def generate():
@@ -48,7 +47,14 @@ class Zombie:
 
     def __init__(self):
         self.sprite = CustomSprite(Utils.img('zombies.png'), 5, is_vertical=False)
-        self.speed = 5
+        self.speed = 3
+
+        if random.randrange(0, 2) == 0:
+            self.sprite.x(random.randrange(0, Constants.WIDTH))
+            self.sprite.y(random.randrange(0, 2) * Constants.HEIGHT)
+        else:
+            self.sprite.x(random.randrange(0, 2) * Constants.WIDTH)
+            self.sprite.y(random.randrange(0, Constants.HEIGHT))
 
     def move_sprite(self, player: pygame.Rect):
 

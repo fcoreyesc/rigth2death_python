@@ -125,7 +125,7 @@ class Stage:
                 self.bullets.append(possible_bullet)
             self.moves.append(a)
 
-    def process_shoots(self):
+    def process_shoots(self) -> None:
         for bullet in self.bullets:
             if bullet.exist():
                 bullet.move(19)

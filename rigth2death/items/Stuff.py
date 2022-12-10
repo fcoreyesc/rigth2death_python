@@ -9,15 +9,11 @@ class MediKit:
         self.time = 10
         self.heal = 10
         self.accumulated_time = 0
-        self.isVisible = False
+        self.is_visible = False
 
     def play(self, dt):
         self.accumulated_time += dt
         if self.time <= self.accumulated_time:
             self.accumulated_time = 0
-            self.isVisible = not self.isVisible
+            self.is_visible = not self.is_visible
 
-        if self.isVisible:
-            pass
-        else:
-            pass

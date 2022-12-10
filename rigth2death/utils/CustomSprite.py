@@ -6,7 +6,7 @@ from utils.Utils import get_image_frames_y, get_image_frames_x
 
 
 class CustomSprite(pygame.sprite.Sprite):
-    def __init__(self, filename, frames=1, is_vertical=True):
+    def __init__(self, filename, frames=1, is_vertical=True, scale: int = 0):
         pygame.sprite.Sprite.__init__(self)
         self.images = []
         img = load_image(filename)
@@ -19,6 +19,13 @@ class CustomSprite(pygame.sprite.Sprite):
             self.originalWidth = img.get_width() / frames
             self.originalHeight = img.get_height()
             self.images = get_image_frames_x(self.originalWidth, self.originalHeight, img, frames)
+
+        if scale > 0:
+            for i in range(len(self.images)):
+                self.images[i] = pygame.transform.scale(
+                    self.images[i], (self.images[i].get_width() * scale, self.images[i].get_height() * scale))
+            self.originalHeight = self.images[0].get_height()
+            self.originalWidth = self.images[0].get_width()
 
         self.image = pygame.Surface.copy(self.images[0])
 
@@ -57,6 +64,7 @@ class CustomSprite(pygame.sprite.Sprite):
     def update_image_vars(self):
         self.image = self.images[self.currentImage]
 
+
     def init_image_vars(self):
         self.currentImage = 0
         self.update_image_vars()
@@ -84,6 +92,9 @@ class CustomSprite(pygame.sprite.Sprite):
             self.rect.y = y
         else:
             return self.rect.y
+
+    def collide_with(self, sprite: 'CustomSprite') -> bool:
+        return self.rect.colliderect(sprite.rect)
 
 
 def load_image(file_name):

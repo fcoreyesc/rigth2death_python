@@ -134,7 +134,13 @@ class Stage:
                 self.bullets.remove(bullet)
 
     def process_zombies(self) -> None:
+
         for zombie in self.zombies.list:
             zombie.move_sprite(self.player.current_sprite)
             self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
             zombie.sprite.play()
+
+            if zombie.sprite.collide_with(self.player.current_sprite):
+                print("Punch in the face")
+                self.player.damage(zombie.power)
+                print(f" {self.player.life}")

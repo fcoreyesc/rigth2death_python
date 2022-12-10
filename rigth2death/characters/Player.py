@@ -11,7 +11,7 @@ from utils.CustomSprite import CustomSprite
 
 class Player:
     def __init__(self):
-        self.life_sprite = CustomSprite(Utils.img_player_stuffs('life.png'), 11, scale=10)
+        self.life_sprite = CustomSprite(Utils.img_player_stuffs('life.png'), 11, scale=3)
         self.life_sprite.images = self.life_sprite.images[::-1]
         self.life_sprite.image = self.life_sprite.images[0]
 
@@ -25,7 +25,7 @@ class Player:
         self.current_sprite.move(400, 400)
         self.speed = 5
         self.last_shoot = int(round(time.time() * 1000))
-        self.life = 100
+        self.health = 100
         self.no_damage_timer = 100
 
     def move(self, key):
@@ -62,14 +62,14 @@ class Player:
 
         self.current_sprite.play()
 
-    def damage(self, damage: int) -> None:
+    def add_damage(self, damage: int) -> None:
 
-        if self.life <= 0:
+        if self.health <= 0:
             print("Me mori, perdi")
             return
 
-        self.life -= damage
-        if self.life % 10 == 0:
+        self.health -= damage
+        if self.health % 10 == 0:
             self.life_sprite.play()
 
 

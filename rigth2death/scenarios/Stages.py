@@ -4,7 +4,7 @@ from pytmx import pytmx, load_pygame
 
 import Constants
 from characters import Player
-from enemies.Zombies import EnemyGroup
+from enemies.Zombies import EnemyGroup, Zombie
 from items.Weapon import Bullet
 
 
@@ -63,7 +63,8 @@ class Stage:
     def __init__(self, allowed_moves, player: Player, zombies: EnemyGroup, screen: Surface):
         self.player: Player = player
         self.zombies = zombies
-        self.bullets = []
+        self.death_zombies: list[Zombie] = []
+        self.bullets: list[Bullet] = []
         self.moves = []
         self.allowed_moves = allowed_moves
         self.running = True
@@ -83,6 +84,7 @@ class Stage:
             self.process_user_input()
             self.process_player_moves()
             self.move_camera_and_paint()
+            self.process_death_zombies()
             self.process_zombies()
             self.process_shoots()
 
@@ -138,9 +140,26 @@ class Stage:
         for zombie in self.zombies.list:
             zombie.move_sprite(self.player.current_sprite)
             self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
-            zombie.sprite.play()
+            zombie.play()
 
             if zombie.sprite.collide_with(self.player.current_sprite):
                 print("Punch in the face")
-                self.player.damage(zombie.power)
-                print(f" {self.player.life}")
+                self.player.add_damage(zombie.power)
+                print(f" {self.player.health}")
+
+            for bullet in self.bullets:
+                if zombie.sprite.collide_with(bullet.sprite):
+                    zombie.add_damage(bullet.power)
+                    bullet.destroy()
+                    if zombie.is_dead():
+                        self.death_zombies.append(zombie)
+                        self.zombies.list.remove(zombie)
+
+    def process_death_zombies(self) -> None:
+
+        for zombie in self.death_zombies:
+            if zombie.is_death_animation_complete():
+                self.death_zombies.remove(zombie)
+                continue
+            zombie.play()
+            self.screen.blit(zombie.sprite_death.image, self.camera.apply(zombie.sprite_death))

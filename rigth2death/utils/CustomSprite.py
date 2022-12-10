@@ -36,7 +36,7 @@ class CustomSprite(pygame.sprite.Sprite):
         self.angle = 0
         self.scale = 1
         self.sequence = frames
-        self.refresh_time = 0.05
+        self.refresh_time = 0.01
         self.sum_refresh = 0
 
     def add_image(self, filename):
@@ -63,7 +63,6 @@ class CustomSprite(pygame.sprite.Sprite):
 
     def update_image_vars(self):
         self.image = self.images[self.currentImage]
-
 
     def init_image_vars(self):
         self.currentImage = 0

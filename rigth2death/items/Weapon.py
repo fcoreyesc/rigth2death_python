@@ -14,24 +14,24 @@ class Weapon:
         self.bullets -= 1
         return Bullet(CustomSprite(Constants.IMAGES + "characters/weapon/green_shoot.png", frames=3, is_vertical=False),
                       x, y, direction)
-    # return Bullet(CustomSprite(Constants.IMAGES + "characters/weapon/common_shoot.png", is_vertical=False), x, y,
-    #              direction)
 
 
 class Bullet:
 
-    def __init__(self, p_sprite, x, y, direction=Constants.LEFT):
-        self.power = 10
-        self.sprite = p_sprite
+    def __init__(self, p_sprite: CustomSprite, x, y, direction=Constants.LEFT):
+        self.power = 50
+        self.sprite: CustomSprite = p_sprite
 
-        self.distance = 500
+        self.distance = 175
+
         self.sprite.rect.x = x
         self.sprite.rect.y = y
 
-        self.velocity = 10
+        self.velocity = 8
         self.move_function = None
         self.direction = direction
         self.select_direction()
+        self.is_alive = True
 
     def select_direction(self):
         if self.direction == Constants.LEFT:
@@ -62,4 +62,7 @@ class Bullet:
         self.sprite.play(dt)
 
     def exist(self):
-        return self.distance > 0
+        return self.is_alive and self.distance > 0
+
+    def destroy(self):
+        self.is_alive = False

@@ -12,8 +12,10 @@ class Zombie:
 
     def __init__(self):
         self.sprite = CustomSprite(Utils.img('zombies.png'), 5, is_vertical=False)
+        self.sprite_death: CustomSprite = CustomSprite(Utils.img('zombie1_death.png'), 7, is_vertical=False)
         self.speed = 3
         self.power = 1
+        self.health = 100
 
         self.select_initial_position()
 
@@ -34,6 +36,28 @@ class Zombie:
             self.sprite.x(self.sprite.x() + (self.speed if diff_x > 0 else - self.speed))
         if diff_y != 0:
             self.sprite.y(self.sprite.y() + (self.speed if diff_y > 0 else - self.speed))
+
+    def add_damage(self, damage: int) -> None:
+
+        self.health -= damage
+
+        if self.health <= 0:
+            print("Me mori zombie")
+            self.sprite_death.rect.x = self.sprite.x()
+            self.sprite_death.rect.y = self.sprite.y()
+            self.sprite_death.init_image_vars()
+
+    def is_dead(self):
+        return self.health <= 0
+
+    def play(self):
+        if self.is_dead():
+            self.sprite_death.play()
+        else:
+            self.sprite.play()
+
+    def is_death_animation_complete(self):
+        return self.sprite_death.sequence == self.sprite_death.currentImage + 1
 
 
 class ZombieType(Enum):

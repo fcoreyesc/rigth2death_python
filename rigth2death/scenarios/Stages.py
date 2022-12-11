@@ -38,19 +38,22 @@ class TiledMap:
         self.width = tm.width * tm.tilewidth
         self.height = tm.height * tm.tileheight
         self.tmx_data = tm
-        self.blockers = []
+        self.blockers: list[pygame.Rect] = []
 
     def render(self, surface):
         ti = self.tmx_data.get_tile_image_by_gid
         for layer in self.tmx_data.visible_layers:
             if isinstance(layer, pytmx.TiledTileLayer):
-                if "block" in layer.name:
-                    self.blockers.append(layer)
                 for x, y, gid, in layer:
                     tile = ti(gid)
                     if tile:
-                        surface.blit(tile, (x * self.tmx_data.tilewidth,
-                                            y * self.tmx_data.tileheight))
+                        tile_width = x * self.tmx_data.tilewidth
+                        tile_height = y * self.tmx_data.tileheight
+                        surface.blit(tile, (tile_width,
+                                            tile_height))
+                        if "block" in layer.name:
+                            self.blockers.append(
+                                pygame.Rect(tile_width, tile_height, self.tmx_data.tilewidth, self.tmx_data.tileheight))
 
     def make_map(self):
         temp_surface = pygame.Surface((self.width, self.height))
@@ -132,6 +135,10 @@ class Stage:
             if bullet.exist():
                 bullet.move(19)
                 self.screen.blit(bullet.sprite.image, self.camera.apply(bullet.sprite))
+
+                if bullet.sprite.rect.collidelist(self.map.blockers) != -1:
+                    bullet.destroy()
+
             else:
                 self.bullets.remove(bullet)
 
@@ -143,9 +150,7 @@ class Stage:
             zombie.play()
 
             if zombie.sprite.collide_with(self.player.current_sprite):
-                print("Punch in the face")
                 self.player.add_damage(zombie.power)
-                print(f" {self.player.health}")
 
             for bullet in self.bullets:
                 if zombie.sprite.collide_with(bullet.sprite):

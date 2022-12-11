@@ -15,7 +15,7 @@ def run():
     zombies = EnemyGroup()
 
     player = Player.Player()
-    for _ in range(1):
+    for _ in range(10):
         zombies.add(ZombieFactory.generate())
 
     stage = Stage(allowed_moves, player, zombies, screen)

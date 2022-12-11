@@ -40,14 +40,12 @@ class Bullet:
             self.sprite.flip(horizontal=True)
         elif self.direction == Constants.RIGHT:
             self.move_function = self._move_x
-            self.velocity *= 1
         elif self.direction == Constants.UP:
             self.move_function = self._move_y
             self.velocity *= -1
             self.sprite.flip(horizontal=False, vertical=False, rotate=True)
         elif self.direction == Constants.DOWN:
             self.move_function = self._move_y
-            self.velocity *= 1
             self.sprite.flip(horizontal=False, vertical=True, rotate=True)
 
     def _move_x(self, x):

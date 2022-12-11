@@ -4,7 +4,7 @@ from pytmx import pytmx, load_pygame
 
 import Constants
 from characters import Player
-from enemies.Zombies import EnemyGroup
+from enemies.Zombies import EnemyGroup, Zombie
 from items.Weapon import Bullet
 
 
@@ -38,19 +38,22 @@ class TiledMap:
         self.width = tm.width * tm.tilewidth
         self.height = tm.height * tm.tileheight
         self.tmx_data = tm
-        self.blockers = []
+        self.blockers: list[pygame.Rect] = []
 
     def render(self, surface):
         ti = self.tmx_data.get_tile_image_by_gid
         for layer in self.tmx_data.visible_layers:
             if isinstance(layer, pytmx.TiledTileLayer):
-                if "block" in layer.name:
-                    self.blockers.append(layer)
                 for x, y, gid, in layer:
                     tile = ti(gid)
                     if tile:
-                        surface.blit(tile, (x * self.tmx_data.tilewidth,
-                                            y * self.tmx_data.tileheight))
+                        tile_width = x * self.tmx_data.tilewidth
+                        tile_height = y * self.tmx_data.tileheight
+                        surface.blit(tile, (tile_width,
+                                            tile_height))
+                        if "block" in layer.name:
+                            self.blockers.append(
+                                pygame.Rect(tile_width, tile_height, self.tmx_data.tilewidth, self.tmx_data.tileheight))
 
     def make_map(self):
         temp_surface = pygame.Surface((self.width, self.height))
@@ -63,7 +66,8 @@ class Stage:
     def __init__(self, allowed_moves, player: Player, zombies: EnemyGroup, screen: Surface):
         self.player: Player = player
         self.zombies = zombies
-        self.bullets = []
+        self.death_zombies: list[Zombie] = []
+        self.bullets: list[Bullet] = []
         self.moves = []
         self.allowed_moves = allowed_moves
         self.running = True
@@ -83,6 +87,7 @@ class Stage:
             self.process_user_input()
             self.process_player_moves()
             self.move_camera_and_paint()
+            self.process_death_zombies()
             self.process_zombies()
             self.process_shoots()
 
@@ -130,11 +135,36 @@ class Stage:
             if bullet.exist():
                 bullet.move(19)
                 self.screen.blit(bullet.sprite.image, self.camera.apply(bullet.sprite))
+
+                if bullet.sprite.rect.collidelist(self.map.blockers) != -1:
+                    bullet.destroy()
+
             else:
                 self.bullets.remove(bullet)
 
     def process_zombies(self) -> None:
+
         for zombie in self.zombies.list:
             zombie.move_sprite(self.player.current_sprite)
             self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
-            zombie.sprite.play()
+            zombie.play()
+
+            if zombie.sprite.collide_with(self.player.current_sprite):
+                self.player.add_damage(zombie.power)
+
+            for bullet in self.bullets:
+                if zombie.sprite.collide_with(bullet.sprite):
+                    zombie.add_damage(bullet.power)
+                    bullet.destroy()
+                    if zombie.is_dead():
+                        self.death_zombies.append(zombie)
+                        self.zombies.list.remove(zombie)
+
+    def process_death_zombies(self) -> None:
+
+        for zombie in self.death_zombies:
+            if zombie.is_death_animation_complete():
+                self.death_zombies.remove(zombie)
+                continue
+            zombie.play()
+            self.screen.blit(zombie.sprite_death.image, self.camera.apply(zombie.sprite_death))

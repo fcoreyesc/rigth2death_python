@@ -4,8 +4,9 @@ from pytmx import pytmx, load_pygame
 
 import Constants
 from characters import Player
-from enemies.Zombies import EnemyGroup, Zombie
+from characters.enemies.Zombies import EnemyGroup, Zombie
 from items.Weapon import Bullet
+from scenarios.Elements import LifeSprite
 
 
 class Camera:
@@ -64,7 +65,11 @@ class TiledMap:
 class Stage:
 
     def __init__(self, allowed_moves, player: Player, zombies: EnemyGroup, screen: Surface):
+        self.life_sprite: LifeSprite = LifeSprite()
         self.player: Player = player
+        self.player.damage_observer = self.life_sprite.play
+        self.player.recover_observer = self.life_sprite.playback
+
         self.zombies = zombies
         self.death_zombies: list[Zombie] = []
         self.bullets: list[Bullet] = []
@@ -99,7 +104,7 @@ class Stage:
         pygame.display.update()
 
     def draw_things(self):
-        self.screen.blit(self.player.life_sprite.image, (Constants.WIDTH - self.player.life_sprite.originalWidth, 0))
+        self.screen.blit(self.life_sprite.sprite.image, (Constants.WIDTH - self.life_sprite.sprite.originalWidth, 0))
 
     def clear_display(self):
         self.screen.fill((0, 0, 0))
@@ -146,16 +151,17 @@ class Stage:
 
         for zombie in self.zombies.list:
             zombie.move_sprite(self.player.current_sprite)
-            self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
             zombie.play()
+            self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
 
             if zombie.sprite.collide_with(self.player.current_sprite):
-                self.player.add_damage(zombie.power)
+                self.player.receive_damage(zombie.power)
 
             for bullet in self.bullets:
                 if zombie.sprite.collide_with(bullet.sprite):
                     zombie.add_damage(bullet.power)
                     bullet.destroy()
+                    self.bullets.remove(bullet)
                     if zombie.is_dead():
                         self.death_zombies.append(zombie)
                         self.zombies.list.remove(zombie)
@@ -167,4 +173,4 @@ class Stage:
                 self.death_zombies.remove(zombie)
                 continue
             zombie.play()
-            self.screen.blit(zombie.sprite_death.image, self.camera.apply(zombie.sprite_death))
+            self.screen.blit(zombie.death_sprite.image, self.camera.apply(zombie.death_sprite))

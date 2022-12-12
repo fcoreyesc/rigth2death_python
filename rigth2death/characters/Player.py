@@ -4,17 +4,14 @@ import pygame
 from pygame.constants import K_RIGHT, K_LEFT, K_DOWN, K_UP, K_SPACE
 
 from Constants import DIRECTIONS
+from characters.Health import Health
 from items.Weapon import Weapon
 from utils import Utils
 from utils.CustomSprite import CustomSprite
 
 
 class Player:
-    def __init__(self):
-        self.life_sprite = CustomSprite(Utils.img_player_stuffs('life.png'), 11, scale=3)
-        self.life_sprite.images = self.life_sprite.images[::-1]
-        self.life_sprite.image = self.life_sprite.images[0]
-
+    def __init__(self, damage_observer=None, recover_observer=None):
         self.movement_sprites = {K_UP: CustomSprite(Utils.img_player('arriba.png'), 8),
                                  K_DOWN: CustomSprite(Utils.img_player('abajo.png'), 8),
                                  K_LEFT: CustomSprite(Utils.img_player('derecha.png'), 7).flip(horizontal=True),
@@ -25,8 +22,10 @@ class Player:
         self.current_sprite.move(400, 400)
         self.speed = 5
         self.last_shoot = int(round(time.time() * 1000))
-        self.health = 100
+        self.health: Health = Health()
         self.no_damage_timer = 100
+        self.damage_observer = damage_observer
+        self.recover_observer = recover_observer
 
     def move(self, key):
         if K_SPACE == key:
@@ -56,21 +55,35 @@ class Player:
         elif key == K_DOWN:
             self.current_sprite.move(self.current_sprite.x(), self.current_sprite.y() + self.speed)
         elif key == K_RIGHT:
-            self.current_sprite.move(self.current_sprite.x() + self.speed + 2, self.current_sprite.y())
+            self.current_sprite.move(self.current_sprite.x() + self.speed, self.current_sprite.y())
         elif key == K_LEFT:
-            self.current_sprite.move(self.current_sprite.x() - self.speed - 2, self.current_sprite.y())
+            self.current_sprite.move(self.current_sprite.x() - self.speed, self.current_sprite.y())
 
         self.current_sprite.play()
 
-    def add_damage(self, damage: int) -> None:
+    def receive_damage(self, damage: int) -> None:
 
-        if self.health <= 0:
-            print("Me mori, perdi")
+        if self.health.is_dead():
             return
 
-        self.health -= damage
-        if self.health % 10 == 0:
-            self.life_sprite.play()
+        original_health = self.health.life
+        self.health.receive_damage(damage)
+
+        if self.damage_observer is not None:
+            times = int(original_health / 10) - int(self.health.life / 10)
+            if times < 0:
+                times = int(original_health / 10)
+            self.damage_observer(times)
+
+    def recover(self, health_points: int):
+        original_health = self.health.life
+        self.health.recover(health_points)
+
+        if self.recover_observer is not None:
+            times = int(original_health / 10) - int((self.health.life / 10))
+            if times > self.health.max_life:
+                times = int(self.health.max_life / 10)
+            self.recover_observer(times)
 
 
 def flip(param: CustomSprite, horizontal=False, vertical=False):

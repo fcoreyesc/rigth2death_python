@@ -61,6 +61,13 @@ class CustomSprite(pygame.sprite.Sprite):
 
         self.update_image_vars()
 
+    def playback(self):
+        self.currentImage -= 1
+        if self.currentImage < 0:
+            self.currentImage = self.sequence - 1
+
+        self.update_image_vars()
+
     def update_image_vars(self):
         self.image = self.images[self.currentImage]
 

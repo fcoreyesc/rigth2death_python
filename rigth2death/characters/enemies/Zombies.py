@@ -4,6 +4,7 @@ from enum import Enum
 import pygame
 
 import Constants
+from characters.Health import Health
 from utils import Utils
 from utils.CustomSprite import CustomSprite
 
@@ -12,10 +13,10 @@ class Zombie:
 
     def __init__(self):
         self.sprite = CustomSprite(Utils.img('zombies.png'), 5, is_vertical=False)
-        self.sprite_death: CustomSprite = CustomSprite(Utils.img('zombie1_death.png'), 7, is_vertical=False)
+        self.death_sprite: CustomSprite = CustomSprite(Utils.img('zombie1_death.png'), 7, is_vertical=False)
         self.speed = 3
         self.power = 1
-        self.health = 100
+        self.health = Health()
 
         self.select_initial_position()
 
@@ -38,26 +39,25 @@ class Zombie:
             self.sprite.y(self.sprite.y() + (self.speed if diff_y > 0 else - self.speed))
 
     def add_damage(self, damage: int) -> None:
+        self.health.receive_damage(damage)
 
-        self.health -= damage
-
-        if self.health <= 0:
+        if self.health.is_dead():
             print("Me mori zombie")
-            self.sprite_death.rect.x = self.sprite.x()
-            self.sprite_death.rect.y = self.sprite.y()
-            self.sprite_death.init_image_vars()
+            self.death_sprite.rect.x = self.sprite.x()
+            self.death_sprite.rect.y = self.sprite.y()
+            self.death_sprite.init_image_vars()
 
     def is_dead(self):
-        return self.health <= 0
+        return self.health.is_dead()
 
     def play(self):
         if self.is_dead():
-            self.sprite_death.play()
+            self.death_sprite.play()
         else:
             self.sprite.play()
 
     def is_death_animation_complete(self):
-        return self.sprite_death.sequence == self.sprite_death.currentImage + 1
+        return self.death_sprite.sequence == self.death_sprite.currentImage + 1
 
 
 class ZombieType(Enum):

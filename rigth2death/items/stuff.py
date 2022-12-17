@@ -1,11 +1,11 @@
-from utils import Utils
-from utils.CustomSprite import CustomSprite
+from utils import utils
+from utils.custom_sprite import CustomSprite
 
 
 class MediKit:
 
     def __init__(self):
-        self.sprite = CustomSprite(Utils.img_player_stuffs('medikit.png'))
+        self.sprite = CustomSprite(utils.img_player_stuffs('medikit.png'))
         self.time = 10
         self.heal = 10
         self.accumulated_time = 0

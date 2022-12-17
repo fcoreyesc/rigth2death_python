@@ -2,19 +2,19 @@ import pygame
 from pygame import Surface
 from pygame.constants import K_LEFT, K_RIGHT, K_UP, K_DOWN, K_SPACE
 
-import Constants
+import constants
 from characters.enemies.Zombies import EnemyGroup, ZombieFactory
-from rigth2death.characters import Player
-from scenarios.Stages import Stage
+from rigth2death.characters.player import Player
+from scenarios.stages import Stage
 
 
 def run():
     allowed_moves = [K_LEFT, K_RIGHT, K_UP, K_DOWN, K_SPACE]
     pygame.init()
-    screen: Surface = pygame.display.set_mode((Constants.WIDTH, Constants.HEIGHT))
+    screen: Surface = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
     zombies = EnemyGroup()
 
-    player = Player.Player()
+    player = Player()
     for _ in range(10):
         zombies.add(ZombieFactory.generate())
 

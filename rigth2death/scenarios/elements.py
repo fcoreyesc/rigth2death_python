@@ -1,11 +1,11 @@
-from utils import Utils
-from utils.CustomSprite import CustomSprite
+from utils import utils
+from utils.custom_sprite import CustomSprite
 
 
 class LifeSprite:
 
     def __init__(self):
-        self.sprite = CustomSprite(Utils.img_player_stuffs('life.png'), 11, scale=3)
+        self.sprite = CustomSprite(utils.img_player_stuffs('life.png'), 11, scale=3)
         self.sprite.images = self.sprite.images[::-1]
         self.sprite.image = self.sprite.images[0]
 

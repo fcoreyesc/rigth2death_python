@@ -1,6 +1,6 @@
 import pygame
 
-from rigth2death import Constants
+from rigth2death import constants
 
 
 def get_image_frames_x(source_width, height, img, frames):
@@ -29,11 +29,11 @@ def get_image_frames_y(width, height, img, frames):
 
 
 def img(name):
-    return Constants.ROOT_DIR + '/../resources/img/characters/zombies/{}'.format(name)
+    return constants.ROOT_DIR + '/../resources/img/characters/zombies/{}'.format(name)
 
 
 def img_player(name):
-    return Constants.ROOT_DIR + '/../resources/img/characters/player/{}'.format(name)
+    return constants.ROOT_DIR + '/../resources/img/characters/player/{}'.format(name)
 
 
 def img_player_stuffs(name):

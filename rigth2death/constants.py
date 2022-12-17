@@ -1,3 +1,4 @@
+"""" main constants"""
 import os
 
 from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT

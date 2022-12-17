@@ -3,19 +3,19 @@ import time
 import pygame
 from pygame.constants import K_RIGHT, K_LEFT, K_DOWN, K_UP, K_SPACE
 
-from Constants import DIRECTIONS
-from characters.Health import Health
-from items.Weapon import Weapon
-from utils import Utils
-from utils.CustomSprite import CustomSprite
+from characters.health import Health
+from constants import DIRECTIONS
+from items.weapon import Weapon
+from utils import utils
+from utils.custom_sprite import CustomSprite
 
 
 class Player:
     def __init__(self, damage_observer=None, recover_observer=None):
-        self.movement_sprites = {K_UP: CustomSprite(Utils.img_player('arriba.png'), 8),
-                                 K_DOWN: CustomSprite(Utils.img_player('abajo.png'), 8),
-                                 K_LEFT: CustomSprite(Utils.img_player('derecha.png'), 7).flip(horizontal=True),
-                                 K_RIGHT: CustomSprite(Utils.img_player('derecha.png'), 7)}
+        self.movement_sprites = {K_UP: CustomSprite(utils.img_player('arriba.png'), 8),
+                                 K_DOWN: CustomSprite(utils.img_player('abajo.png'), 8),
+                                 K_LEFT: CustomSprite(utils.img_player('derecha.png'), 7).flip(horizontal=True),
+                                 K_RIGHT: CustomSprite(utils.img_player('derecha.png'), 7)}
 
         self.current_k_sprite = K_RIGHT
         self.current_sprite = self.movement_sprites.get(self.current_k_sprite)

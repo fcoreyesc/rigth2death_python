@@ -3,17 +3,17 @@ from enum import Enum
 
 import pygame
 
-import Constants
-from characters.Health import Health
-from utils import Utils
-from utils.CustomSprite import CustomSprite
+import constants
+from characters.health import Health
+from utils import utils
+from utils.custom_sprite import CustomSprite
 
 
 class Zombie:
 
     def __init__(self):
-        self.sprite = CustomSprite(Utils.img('zombies.png'), 5, is_vertical=False)
-        self.death_sprite: CustomSprite = CustomSprite(Utils.img('zombie1_death.png'), 7, is_vertical=False)
+        self.sprite = CustomSprite(utils.img('zombies.png'), 5, is_vertical=False)
+        self.death_sprite: CustomSprite = CustomSprite(utils.img('zombie1_death.png'), 7, is_vertical=False)
         self.speed = 3
         self.power = 1
         self.health = Health()
@@ -22,11 +22,11 @@ class Zombie:
 
     def select_initial_position(self):
         if random.randrange(0, 2) == 0:
-            self.sprite.x(random.randrange(0, Constants.WIDTH))
-            self.sprite.y(random.randrange(0, 2) * Constants.HEIGHT)
+            self.sprite.x(random.randrange(0, constants.WIDTH))
+            self.sprite.y(random.randrange(0, 2) * constants.HEIGHT)
         else:
-            self.sprite.x(random.randrange(0, 2) * Constants.WIDTH)
-            self.sprite.y(random.randrange(0, Constants.HEIGHT))
+            self.sprite.x(random.randrange(0, 2) * constants.WIDTH)
+            self.sprite.y(random.randrange(0, constants.HEIGHT))
 
     def move_sprite(self, player: pygame.Rect):
 
@@ -57,7 +57,7 @@ class Zombie:
             self.sprite.play()
 
     def is_death_animation_complete(self):
-        return self.death_sprite.sequence == self.death_sprite.currentImage + 1
+        return self.death_sprite.sequence == self.death_sprite.current_image + 1
 
 
 class ZombieType(Enum):

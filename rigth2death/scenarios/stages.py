@@ -2,9 +2,11 @@ import pygame
 from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP
 from pytmx import pytmx, load_pygame
 
-import Constants
-from characters import Player
+import constants
 from characters.enemies.Zombies import EnemyGroup, Zombie
+from characters.player import Player
+from items.weapon import Bullet
+from scenarios.elements import LifeSprite
 from items.Stuff import MediKit
 from items.Weapon import Bullet
 from scenarios.Elements import LifeSprite
@@ -23,14 +25,14 @@ class Camera:
         return rect.move(self.rectangle.topleft)
 
     def update(self, target):
-        x = -target.rect.centerx + int(Constants.WIDTH / 2)
-        y = -target.rect.centery + int(Constants.HEIGHT / 2)
+        x = -target.rect.centerx + int(constants.WIDTH / 2)
+        y = -target.rect.centery + int(constants.HEIGHT / 2)
 
         # limit scrolling to map size
         x = min(0, x)  # left
         y = min(0, y)  # top
-        x = max(-(self.width - Constants.WIDTH), x)  # right
-        y = max(-(self.height - Constants.HEIGHT), y)  # bottom
+        x = max(-(self.width - constants.WIDTH), x)  # right
+        y = max(-(self.height - constants.HEIGHT), y)  # bottom
         self.rectangle = pygame.Rect(x, y, self.width, self.height)
 
 
@@ -80,7 +82,7 @@ class Stage:
         self.running = True
 
         self.screen: Surface = screen
-        self.map = TiledMap(Constants.MAPS + "mapa_z.tmx")
+        self.map = TiledMap(constants.MAPS + "mapa_z.tmx")
 
         self.camera = Camera(self.map.width, self.map.height)
         self.image_map = self.map.make_map()
@@ -107,7 +109,7 @@ class Stage:
         pygame.display.update()
 
     def draw_things(self):
-        self.screen.blit(self.life_sprite.sprite.image, (Constants.WIDTH - self.life_sprite.sprite.originalWidth, 0))
+        self.screen.blit(self.life_sprite.sprite.image, (constants.WIDTH - self.life_sprite.sprite.original_width, 0))
 
     def clear_display(self):
         self.screen.fill((0, 0, 0))

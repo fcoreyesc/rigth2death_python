@@ -76,13 +76,17 @@ class Player:
             self.damage_observer(times)
 
     def recover(self, health_points: int):
+
+        if self.health.is_life_full():
+            return
+
         original_health = self.health.life
         self.health.recover(health_points)
 
         if self.recover_observer is not None:
-            times = int(original_health / 10) - int((self.health.life / 10))
-            if times > self.health.max_life:
-                times = int(self.health.max_life / 10)
+            times = int(self.health.life / 10) - int(original_health / 10)
+            if times < 0:
+                times = 1
             self.recover_observer(times)
 
 

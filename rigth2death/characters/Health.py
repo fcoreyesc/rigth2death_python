@@ -16,3 +16,6 @@ class Health:
 
     def is_dead(self):
         return self.life <= 0
+
+    def is_life_full(self):
+        return self.life == self.max_life

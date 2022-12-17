@@ -5,6 +5,7 @@ from pytmx import pytmx, load_pygame
 import Constants
 from characters import Player
 from characters.enemies.Zombies import EnemyGroup, Zombie
+from items.Stuff import MediKit
 from items.Weapon import Bullet
 from scenarios.Elements import LifeSprite
 
@@ -69,6 +70,7 @@ class Stage:
         self.player: Player = player
         self.player.damage_observer = self.life_sprite.play
         self.player.recover_observer = self.life_sprite.playback
+        self.medikit = MediKit()
 
         self.zombies = zombies
         self.death_zombies: list[Zombie] = []
@@ -92,10 +94,11 @@ class Stage:
             self.process_user_input()
             self.process_player_moves()
             self.move_camera_and_paint()
+
+            self.process_medikit()
             self.process_death_zombies()
             self.process_zombies()
             self.process_shoots()
-
             self.draw_things()
             self.swap_display()
 
@@ -174,3 +177,15 @@ class Stage:
                 continue
             zombie.play()
             self.screen.blit(zombie.death_sprite.image, self.camera.apply(zombie.death_sprite))
+
+    def process_medikit(self):
+
+        self.screen.blit(self.medikit.sprite.image, self.camera.apply(self.medikit.sprite))
+        if self.medikit.is_visible:
+            if self.medikit.sprite.collide_with(self.player.current_sprite):
+                self.player.recover(self.medikit.heal)
+                self.medikit.hide()
+
+        else:
+            self.medikit.select_position(self.map.blockers)
+            self.medikit.sprite.play()

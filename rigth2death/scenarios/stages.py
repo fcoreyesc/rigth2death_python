@@ -2,14 +2,12 @@ import pygame
 from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP
 from pytmx import pytmx, load_pygame
 
-import constants
 from characters.enemies.Zombies import EnemyGroup, Zombie
 from characters.player import Player
+from items.stuff import MediKit
 from items.weapon import Bullet
 from scenarios.elements import LifeSprite
-from items.Stuff import MediKit
-from items.Weapon import Bullet
-from scenarios.Elements import LifeSprite
+from utils import constants
 
 
 class Camera:

@@ -1,4 +1,4 @@
-import constants
+from utils import constants
 from utils.custom_sprite import CustomSprite
 
 

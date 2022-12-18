@@ -1,15 +1,15 @@
 import pygame
 
-from rigth2death import constants
+from utils import constants
 
 
-def get_image_frames_x(source_width, height, img, frames):
+def get_image_frames_x(source_width, height, image, frames):
     width = source_width
     images = []
     x = 0
     for _ in range(frames):
         frame_surface = pygame.Surface((width, height), pygame.SRCALPHA, 32)
-        frame_surface.blit(img, (x, 0))
+        frame_surface.blit(image, (x, 0))
         images.append(frame_surface.copy())
         x -= width
     return images
@@ -29,11 +29,11 @@ def get_image_frames_y(width, height, img, frames):
 
 
 def img(name):
-    return constants.ROOT_DIR + '/../resources/img/characters/zombies/{}'.format(name)
+    return constants.IMAGES + 'characters/zombies/{}'.format(name)
 
 
 def img_player(name):
-    return constants.ROOT_DIR + '/../resources/img/characters/player/{}'.format(name)
+    return constants.IMAGES + 'characters/player/{}'.format(name)
 
 
 def img_player_stuffs(name):

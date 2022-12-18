@@ -2,7 +2,7 @@ import pygame
 from pygame import Surface
 from pygame.constants import K_LEFT, K_RIGHT, K_UP, K_DOWN, K_SPACE
 
-import constants
+from utils import constants
 from characters.enemies.Zombies import EnemyGroup, ZombieFactory
 from rigth2death.characters.player import Player
 from scenarios.stages import Stage

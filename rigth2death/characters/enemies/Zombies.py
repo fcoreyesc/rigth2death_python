@@ -3,9 +3,8 @@ from enum import Enum
 
 import pygame
 
-import constants
 from characters.health import Health
-from utils import utils
+from utils import utils, constants
 from utils.custom_sprite import CustomSprite
 
 
@@ -76,9 +75,7 @@ class EnemyGroup:
 
     def __init__(self, enemies=None):
         self.size = 0
-        self.list: list[Zombie] = []
-        if enemies is not None:
-            self.list: list[Zombie] = enemies
+        self.list: list[Zombie] = [] if enemies is None else enemies
 
     def add(self, enemy: Zombie) -> None:
         self.list.append(enemy)

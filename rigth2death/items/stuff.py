@@ -1,6 +1,7 @@
-from utils import utils
-from utils.custom_sprite import CustomSprite
 import random
+
+from utils import utils, constants
+from utils.custom_sprite import CustomSprite
 
 
 class MediKit:
@@ -11,8 +12,8 @@ class MediKit:
         self.heal = 25
         self.accumulated_time = 0
         self.is_visible = False
-        self.__padding_width = constants.WIDTH - self.sprite.originalWidth
-        self.__padding_height = constants.HEIGHT - self.sprite.originalHeight
+        self.__padding_width = constants.WIDTH - self.sprite.original_width
+        self.__padding_height = constants.HEIGHT - self.sprite.original_width
 
     def select_position(self, blocks):
 

@@ -4,7 +4,7 @@ import pygame
 from pygame.constants import K_RIGHT, K_LEFT, K_DOWN, K_UP, K_SPACE
 
 from characters.health import Health
-from constants import DIRECTIONS
+from utils.constants import DIRECTIONS
 from items.weapon import Weapon
 from utils import utils
 from utils.custom_sprite import CustomSprite

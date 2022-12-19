@@ -1,4 +1,5 @@
 import os
+import time
 
 import pygame
 from pygame import transform
@@ -7,7 +8,7 @@ from utils.utils import get_image_frames_y, get_image_frames_x
 
 
 class CustomSprite(pygame.sprite.Sprite):
-    def __init__(self, filename, frames=1, is_vertical=True, scale: int = 0):
+    def __init__(self, filename, frames=1, is_vertical=True, scale: int = 0, refresh_time=500):
         pygame.sprite.Sprite.__init__(self)
         self.images = []
         img = load_image(filename)
@@ -36,7 +37,7 @@ class CustomSprite(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.scale = scale
         self.sequence = frames
-        self.refresh_time = 0.01
+        self.refresh_time = refresh_time
         self.sum_refresh = 0
 
     def add_image(self, filename):
@@ -46,14 +47,13 @@ class CustomSprite(pygame.sprite.Sprite):
         self.rect.x = xpos
         self.rect.y = ypos
 
-    def play(self, dt=None):
+    def play(self):
+        refresh_time = int(round(time.time() * 1000)) - self.sum_refresh
 
-        if dt is not None:
-            if self.sum_refresh > self.refresh_time:
-                self.sum_refresh = 0
-            else:
-                self.sum_refresh += dt
-                return
+        if refresh_time > self.refresh_time:
+            self.sum_refresh = int(round(time.time() * 1000))
+        else:
+            return
 
         self.current_image += 1
         if self.current_image == self.sequence:
@@ -88,12 +88,12 @@ class CustomSprite(pygame.sprite.Sprite):
         return self
 
     def x(self, x=None) -> int:
-        if x:
+        if x is not None:
             self.rect.x = x
         return self.rect.x
 
     def y(self, y=None):
-        if y:
+        if y is not None:
             self.rect.y = y
         return self.rect.y
 

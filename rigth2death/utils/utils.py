@@ -15,13 +15,13 @@ def get_image_frames_x(source_width, height, image, frames):
     return images
 
 
-def get_image_frames_y(width, height, img, frames):
+def get_image_frames_y(width, height, image, frames):
     images = []
     y = 0
 
     for _ in range(frames):
         frame_surf = pygame.Surface((width, height), pygame.SRCALPHA, 32)
-        frame_surf.blit(img, (0, y))
+        frame_surf.blit(image, (0, y))
         images.append(frame_surf.copy())
         y -= height
 

@@ -1,8 +1,6 @@
 import random
 from enum import Enum
 
-import pygame
-
 from characters.health import Health
 from utils import utils, constants
 from utils.custom_sprite import CustomSprite
@@ -11,9 +9,10 @@ from utils.custom_sprite import CustomSprite
 class Zombie:
 
     def __init__(self):
-        self.sprite = CustomSprite(utils.img('zombies.png'), 5, is_vertical=False)
-        self.death_sprite: CustomSprite = CustomSprite(utils.img('zombie1_death.png'), 7, is_vertical=False)
-        self.speed = 3
+        self.sprite = CustomSprite(utils.img('zombies.png'), 5, is_vertical=False, refresh_time=150)
+        self.death_sprite: CustomSprite = CustomSprite(
+            utils.img('zombie1_death.png'), 7, is_vertical=False, refresh_time=50)
+        self.speed = 2
         self.power = 1
         self.health = Health()
 
@@ -27,7 +26,7 @@ class Zombie:
             self.sprite.x(random.randrange(0, 2) * constants.WIDTH)
             self.sprite.y(random.randrange(0, constants.HEIGHT))
 
-    def move_sprite(self, player: pygame.Rect):
+    def move(self, player: CustomSprite):
 
         diff_x: int = player.x() - self.sprite.x()
         diff_y: int = player.y() - self.sprite.y()

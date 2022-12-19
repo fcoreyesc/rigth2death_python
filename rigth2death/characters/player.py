@@ -4,23 +4,24 @@ import pygame
 from pygame.constants import K_RIGHT, K_LEFT, K_DOWN, K_UP, K_SPACE
 
 from characters.health import Health
-from utils.constants import DIRECTIONS
 from items.weapon import Weapon
 from utils import utils
+from utils.constants import DIRECTIONS
 from utils.custom_sprite import CustomSprite
 
 
 class Player:
     def __init__(self, damage_observer=None, recover_observer=None):
-        self.movement_sprites = {K_UP: CustomSprite(utils.img_player('arriba.png'), 8),
-                                 K_DOWN: CustomSprite(utils.img_player('abajo.png'), 8),
-                                 K_LEFT: CustomSprite(utils.img_player('derecha.png'), 7).flip(horizontal=True),
-                                 K_RIGHT: CustomSprite(utils.img_player('derecha.png'), 7)}
+        self.movement_sprites = {K_UP: CustomSprite(utils.img_player('arriba.png'), 8, refresh_time=80),
+                                 K_DOWN: CustomSprite(utils.img_player('abajo.png'), 8, refresh_time=80),
+                                 K_LEFT: CustomSprite(utils.img_player('derecha.png'), 7, refresh_time=80)
+                                 .flip(horizontal=True),
+                                 K_RIGHT: CustomSprite(utils.img_player('derecha.png'), 7, refresh_time=80)}
 
         self.current_k_sprite = K_RIGHT
         self.current_sprite = self.movement_sprites.get(self.current_k_sprite)
         self.current_sprite.move(400, 400)
-        self.speed = 5
+        self.speed = 4
         self.last_shoot = int(round(time.time() * 1000))
         self.health: Health = Health()
         self.no_damage_timer = 100

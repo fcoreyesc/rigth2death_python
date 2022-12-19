@@ -2,12 +2,13 @@ import pygame
 from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP
 from pytmx import pytmx, load_pygame
 
-from characters.enemies.Zombies import EnemyGroup, Zombie
+from characters.enemies.zombies import EnemyGroup, Zombie
 from characters.player import Player
 from items.stuff import MediKit
 from items.weapon import Bullet
 from scenarios.elements import LifeSprite
 from utils import constants
+from utils.custom_sprite import CustomSprite
 
 
 class Camera:
@@ -16,7 +17,7 @@ class Camera:
         self.width = width
         self.height = height
 
-    def apply(self, entity):
+    def apply(self, entity: CustomSprite):
         return entity.rect.move(self.rectangle.topleft)
 
     def apply_rect(self, rect):
@@ -87,9 +88,9 @@ class Stage:
         self.stage_rect = self.image_map.get_rect()
 
     def run(self):
+        clock = pygame.time.Clock()
         while self.running:
             self.clear_display()
-            pygame.time.delay(70)
 
             self.process_user_input()
             self.process_player_moves()
@@ -101,6 +102,7 @@ class Stage:
             self.process_shoots()
             self.draw_things()
             self.swap_display()
+            clock.tick(60)
 
     @staticmethod
     def swap_display():
@@ -141,7 +143,7 @@ class Stage:
     def process_shoots(self) -> None:
         for bullet in self.bullets:
             if bullet.exist():
-                bullet.move(19)
+                bullet.move()
                 self.screen.blit(bullet.sprite.image, self.camera.apply(bullet.sprite))
 
                 if bullet.sprite.rect.collidelist(self.map.blockers) != -1:
@@ -153,7 +155,7 @@ class Stage:
     def process_zombies(self) -> None:
 
         for zombie in self.zombies.list:
-            zombie.move_sprite(self.player.current_sprite)
+            zombie.move(self.player.current_sprite)
             zombie.play()
             self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
 

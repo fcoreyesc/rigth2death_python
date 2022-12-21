@@ -17,6 +17,8 @@ class Zombie:
         self.health = Health()
 
         self.select_initial_position()
+        self.selected_strategy = "basic"
+        self.last_movements = []
 
     def select_initial_position(self):
         if random.randrange(0, 2) == 0:
@@ -26,21 +28,42 @@ class Zombie:
             self.sprite.x(random.randrange(0, 2) * constants.WIDTH)
             self.sprite.y(random.randrange(0, constants.HEIGHT))
 
-    def move(self, player: CustomSprite):
+    def move(self, player: CustomSprite, blockers):
 
+        if self.selected_strategy == 'basic':
+            self.basic_move_strategy(player)
+            if self.sprite.rect.collidelist(blockers) != -1:
+                self.selected_strategy = 'other'
+        else:
+            if len(self.last_movements) > 0:
+                self.last_move_strategy()
+            else:
+                self.selected_strategy = 'basic'
+        self.play()
+
+    def last_move_strategy(self):
+        previous_move = self.last_movements.pop()
+        self.sprite.x(previous_move[0])
+        self.sprite.y(previous_move[1])
+
+    def basic_move_strategy(self, player):
+        self.__add_last_move()
         diff_x: int = player.x() - self.sprite.x()
         diff_y: int = player.y() - self.sprite.y()
-
         if diff_x != 0:
             self.sprite.x(self.sprite.x() + (self.speed if diff_x > 0 else - self.speed))
         if diff_y != 0:
             self.sprite.y(self.sprite.y() + (self.speed if diff_y > 0 else - self.speed))
 
+    def __add_last_move(self):
+        if len(self.last_movements) >= 20:
+            self.last_movements.pop(0)
+        self.last_movements.append((self.sprite.x(), self.sprite.y()))
+
     def add_damage(self, damage: int) -> None:
         self.health.receive_damage(damage)
 
         if self.health.is_dead():
-            print("Me mori zombie")
             self.death_sprite.rect.x = self.sprite.x()
             self.death_sprite.rect.y = self.sprite.y()
             self.death_sprite.init_image_vars()

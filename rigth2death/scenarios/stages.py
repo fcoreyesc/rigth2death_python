@@ -155,8 +155,7 @@ class Stage:
     def process_zombies(self) -> None:
 
         for zombie in self.zombies.list:
-            zombie.move(self.player.current_sprite)
-            zombie.play()
+            zombie.move(self.player.current_sprite, self.map.blockers)
             self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
 
             if zombie.sprite.collide_with(self.player.current_sprite):
@@ -182,8 +181,8 @@ class Stage:
 
     def process_medikit(self):
 
-        self.screen.blit(self.medikit.sprite.image, self.camera.apply(self.medikit.sprite))
         if self.medikit.is_visible:
+            self.screen.blit(self.medikit.sprite.image, self.camera.apply(self.medikit.sprite))
             if self.medikit.sprite.collide_with(self.player.current_sprite):
                 self.player.recover(self.medikit.heal)
                 self.medikit.hide()

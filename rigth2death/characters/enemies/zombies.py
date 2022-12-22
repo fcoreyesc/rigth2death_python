@@ -1,9 +1,8 @@
 import random
 from abc import ABC
-from enum import Enum
 
 from characters.health import Health
-from utils import utils, constants
+from utils import utils
 from utils.custom_sprite import CustomSprite
 
 
@@ -18,13 +17,13 @@ class Zombie(ABC):
         self.sprite = None
         self.death_sprite = None
 
-    def select_initial_position(self):
+    def select_initial_position(self, width, height):
         if random.randrange(0, 2) == 0:
-            self.sprite.x(random.randrange(0, constants.WIDTH))
-            self.sprite.y(random.randrange(0, 2) * constants.HEIGHT)
+            self.sprite.x(random.randrange(0, width))
+            self.sprite.y(random.randrange(0, 2) * height)
         else:
-            self.sprite.x(random.randrange(0, 2) * constants.WIDTH)
-            self.sprite.y(random.randrange(0, constants.HEIGHT))
+            self.sprite.x(random.randrange(0, 2) * width)
+            self.sprite.y(random.randrange(0, height))
 
     def move(self, player: CustomSprite, blockers):
 
@@ -89,7 +88,6 @@ class NormalZombie(Zombie):
                                                        7,
                                                        is_vertical=True,
                                                        refresh_time=120)
-        self.select_initial_position()
 
 
 class TrollZombie(Zombie):
@@ -102,7 +100,7 @@ class TrollZombie(Zombie):
                                                        7,
                                                        is_vertical=False,
                                                        refresh_time=50)
-        self.select_initial_position()
+
 
 class ZombieFactory:
 
@@ -110,8 +108,7 @@ class ZombieFactory:
     def generate():
         if random.randrange(0, 2) == 0:
             return NormalZombie()
-        else:
-            return TrollZombie()
+        return TrollZombie()
 
 
 class EnemyGroup:

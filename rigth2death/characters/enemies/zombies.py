@@ -9,7 +9,7 @@ from utils.custom_sprite import CustomSprite
 
 class Zombie(ABC):
 
-    def __init__(self, speed=2, health=100):
+    def __init__(self, speed=1, health=100):
         self.speed = speed
         self.power = 1
         self.health = Health(life=health)
@@ -82,10 +82,10 @@ class Zombie(ABC):
 class NormalZombie(Zombie):
 
     def __init__(self):
-        super().__init__(speed=4)
+        super().__init__(speed=2)
 
-        self.sprite = CustomSprite(utils.img('zombie2.png'), 3, is_vertical=True, refresh_time=150)
-        self.death_sprite: CustomSprite = CustomSprite(utils.img('morir.png'),
+        self.sprite = CustomSprite(utils.img('normal_zombie.png'), 3, is_vertical=True, refresh_time=150)
+        self.death_sprite: CustomSprite = CustomSprite(utils.img('normal_zombie_death.png'),
                                                        7,
                                                        is_vertical=True,
                                                        refresh_time=120)
@@ -96,9 +96,9 @@ class TrollZombie(Zombie):
 
     def __init__(self):
         super().__init__(health=200)
-        self.sprite = CustomSprite(utils.img('zombies.png'), 5, is_vertical=False, refresh_time=150)
+        self.sprite = CustomSprite(utils.img('troll_zombie.png'), 5, is_vertical=False, refresh_time=150)
 
-        self.death_sprite: CustomSprite = CustomSprite(utils.img('zombie1_death.png'),
+        self.death_sprite: CustomSprite = CustomSprite(utils.img('troll_zombie_death.png'),
                                                        7,
                                                        is_vertical=False,
                                                        refresh_time=50)

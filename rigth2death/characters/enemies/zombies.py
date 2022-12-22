@@ -1,4 +1,5 @@
 import random
+from abc import ABC
 from enum import Enum
 
 from characters.health import Health
@@ -6,19 +7,16 @@ from utils import utils, constants
 from utils.custom_sprite import CustomSprite
 
 
-class Zombie:
+class Zombie(ABC):
 
-    def __init__(self):
-        self.sprite = CustomSprite(utils.img('zombies.png'), 5, is_vertical=False, refresh_time=150)
-        self.death_sprite: CustomSprite = CustomSprite(
-            utils.img('zombie1_death.png'), 7, is_vertical=False, refresh_time=50)
-        self.speed = 2
+    def __init__(self, speed=2, health=100):
+        self.speed = speed
         self.power = 1
-        self.health = Health()
-
-        self.select_initial_position()
+        self.health = Health(life=health)
         self.selected_strategy = "basic"
         self.last_movements = []
+        self.sprite = None
+        self.death_sprite = None
 
     def select_initial_position(self):
         if random.randrange(0, 2) == 0:
@@ -81,16 +79,39 @@ class Zombie:
         return self.death_sprite.sequence == self.death_sprite.current_image + 1
 
 
-class ZombieType(Enum):
-    NORMAL = 1
-    GREEN = 2
+class NormalZombie(Zombie):
 
+    def __init__(self):
+        super().__init__(speed=4)
+
+        self.sprite = CustomSprite(utils.img('zombie2.png'), 3, is_vertical=True, refresh_time=150)
+        self.death_sprite: CustomSprite = CustomSprite(utils.img('morir.png'),
+                                                       7,
+                                                       is_vertical=True,
+                                                       refresh_time=120)
+        self.select_initial_position()
+
+
+class TrollZombie(Zombie):
+
+    def __init__(self):
+        super().__init__(health=200)
+        self.sprite = CustomSprite(utils.img('zombies.png'), 5, is_vertical=False, refresh_time=150)
+
+        self.death_sprite: CustomSprite = CustomSprite(utils.img('zombie1_death.png'),
+                                                       7,
+                                                       is_vertical=False,
+                                                       refresh_time=50)
+        self.select_initial_position()
 
 class ZombieFactory:
 
     @staticmethod
     def generate():
-        return Zombie()
+        if random.randrange(0, 2) == 0:
+            return NormalZombie()
+        else:
+            return TrollZombie()
 
 
 class EnemyGroup:

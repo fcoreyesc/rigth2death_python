@@ -1,7 +1,7 @@
 import time
 
 import pygame
-from pygame.constants import K_RIGHT, K_LEFT, K_DOWN, K_UP, K_SPACE
+from pygame.constants import K_RIGHT, K_LEFT, K_DOWN, K_UP, K_SPACE, K_LCTRL
 
 from characters.health import Health
 from items.weapon import Weapon
@@ -37,6 +37,12 @@ class Player:
                                      DIRECTIONS.get(self.current_k_sprite))
 
             return
+        elif K_LCTRL == key:
+            new_shoot = int(round(time.time() * 1000)) - self.last_shoot
+            if new_shoot > 250:
+                self.last_shoot = int(round(time.time() * 1000))
+                return Weapon().fire2(self.current_sprite.x(), self.current_sprite.y(),
+                                      DIRECTIONS.get(self.current_k_sprite))
 
         selected_sprite = self.movement_sprites.get(key)
         if selected_sprite is None:

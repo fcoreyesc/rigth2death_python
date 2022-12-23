@@ -13,23 +13,30 @@ class Weapon:
     def fire(self, x, y, direction=constants.RIGHT):
         self.bullets -= 1
         return Bullet(
-            CustomSprite(constants.IMAGES + "characters/weapon/green_shoot.png", frames=3, is_vertical=False,
+            CustomSprite(constants.IMAGES + "characters/weapon/common_shoot.png", frames=1, is_vertical=False,
                          refresh_time=100),
             x, y, direction)
+
+    def fire2(self, x, y, direction=constants.RIGHT):
+        self.bullets -= 1
+        return Bullet(
+            CustomSprite(constants.IMAGES + "characters/weapon/green_shoot.png", frames=3, is_vertical=False,
+                         refresh_time=100),
+            x, y, direction, power=100, distance=500, velocity=5)
 
 
 class Bullet:
 
-    def __init__(self, p_sprite: CustomSprite, x, y, direction=constants.LEFT):
-        self.power = 50
+    def __init__(self, p_sprite: CustomSprite, x, y, direction=constants.LEFT, power=50, distance=185, velocity=4):
+        self.power = power
         self.sprite: CustomSprite = p_sprite
 
-        self.distance = 185
+        self.distance = distance
 
         self.sprite.rect.x = x
         self.sprite.rect.y = y
 
-        self.velocity = 4
+        self.velocity = velocity
         self.move_function = None
         self.direction = direction
         self.select_direction()

@@ -2,7 +2,7 @@ import pygame
 from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP
 from pytmx import pytmx, load_pygame
 
-from characters.enemies.zombies import EnemyGroup, Zombie
+from characters.enemies.zombies import Zombie, ZombieFactory
 from characters.player import Player
 from items.stuff import MediKit
 from items.weapon import Bullet
@@ -66,29 +66,32 @@ class TiledMap:
 
 class Stage:
 
-    def __init__(self, allowed_moves, player: Player, zombies: EnemyGroup, screen: Surface):
+    def __init__(self, allowed_moves):
+
+        self.screen: Surface = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
+        self.map = TiledMap(constants.MAPS + "mapa_z.tmx")
         self.life_sprite: LifeSprite = LifeSprite()
-        self.player: Player = player
+        self.player: Player = Player()
         self.player.damage_observer = self.life_sprite.play
         self.player.recover_observer = self.life_sprite.playback
         self.medikit = MediKit()
 
-        self.zombies = zombies
+        self.zombies = [ZombieFactory.generate() for _ in range(10)]
         self.death_zombies: list[Zombie] = []
         self.bullets: list[Bullet] = []
         self.moves = []
         self.allowed_moves = allowed_moves
         self.running = True
-
-        self.screen: Surface = screen
-        self.map = TiledMap(constants.MAPS + "mapa_z.tmx")
-
         self.camera = Camera(self.map.width, self.map.height)
         self.image_map = self.map.make_map()
         self.stage_rect = self.image_map.get_rect()
 
     def run(self):
         clock = pygame.time.Clock()
+
+        for zombie in self.zombies:
+            zombie.select_initial_position(self.map.width, self.map.height)
+
         while self.running:
             self.clear_display()
 
@@ -154,7 +157,7 @@ class Stage:
 
     def process_zombies(self) -> None:
 
-        for zombie in self.zombies.list:
+        for zombie in self.zombies:
             zombie.move(self.player.current_sprite, self.map.blockers)
             self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
 
@@ -168,7 +171,7 @@ class Stage:
                     self.bullets.remove(bullet)
                     if zombie.is_dead():
                         self.death_zombies.append(zombie)
-                        self.zombies.list.remove(zombie)
+                        self.zombies.remove(zombie)
 
     def process_death_zombies(self) -> None:
 

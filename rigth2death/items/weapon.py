@@ -22,7 +22,7 @@ class Weapon:
         return Bullet(
             CustomSprite(constants.IMAGES + "characters/weapon/green_shoot.png", frames=3, is_vertical=False,
                          refresh_time=100),
-            x, y, direction, power=100, distance=1000, velocity=5)
+            x, y, direction, power=100, distance=500, velocity=5)
 
 
 class Bullet:

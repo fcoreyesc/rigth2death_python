@@ -1,4 +1,5 @@
 import pygame
+import pygame.midi
 from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP
 from pytmx import pytmx, load_pygame
 
@@ -8,6 +9,7 @@ from items.stuff import MediKit
 from items.weapon import Bullet
 from scenarios.elements import LifeSprite
 from utils import constants
+from utils.constants import BGROUND_MUSIC
 from utils.custom_sprite import CustomSprite
 
 
@@ -87,7 +89,10 @@ class Stage:
         self.stage_rect = self.image_map.get_rect()
 
     def run(self):
+        pygame.mixer.music.load(BGROUND_MUSIC)
+
         clock = pygame.time.Clock()
+        pygame.mixer.music.play()
 
         for zombie in self.zombies:
             zombie.select_initial_position(self.map.width, self.map.height)
@@ -105,7 +110,9 @@ class Stage:
             self.process_shoots()
             self.draw_things()
             self.swap_display()
+
             clock.tick(60)
+        pygame.mixer.music.stop()
 
     @staticmethod
     def swap_display():

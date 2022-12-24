@@ -10,6 +10,7 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 RESOURCES = ROOT_DIR + "/../../resources/"
 IMAGES = RESOURCES + "img/"
 MAPS = RESOURCES + "maps/"
+MUSIC = RESOURCES + "sound/"
 
 LEFT = 1
 RIGHT = 2
@@ -23,3 +24,5 @@ DIRECTIONS = {K_UP: UP,
 
 COMMON_BULLET = IMAGES + "characters/weapon/common_shoot.png"
 SPECIAL_BULLET = IMAGES + "characters/weapon/green_shoot.png"
+
+BGROUND_MUSIC = MUSIC + "audio.mid"

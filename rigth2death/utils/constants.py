@@ -20,3 +20,6 @@ DIRECTIONS = {K_UP: UP,
               K_DOWN: DOWN,
               K_LEFT: LEFT,
               K_RIGHT: RIGHT}
+
+COMMON_BULLET = IMAGES + "characters/weapon/common_shoot.png"
+SPECIAL_BULLET = IMAGES + "characters/weapon/green_shoot.png"

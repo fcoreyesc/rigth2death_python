@@ -1,3 +1,8 @@
+import time
+from functools import wraps
+
+from pygame import K_SPACE, K_LCTRL
+
 from utils import constants
 from utils.custom_sprite import CustomSprite
 
@@ -9,40 +14,55 @@ class Weapon:
         self.cadence = 5
         self.bullets = 100
         self.distance = 10
+        self.last_shoot = int(round(time.time() * 1000))
+        self.type_bullets = {K_SPACE: self.normal, K_LCTRL: self.special}
 
-    def fire(self, x, y, direction=constants.RIGHT):
-        self.bullets -= 1
-        return Bullet(
-            CustomSprite(constants.IMAGES + "characters/weapon/common_shoot.png", frames=1, is_vertical=False,
-                         refresh_time=100),
-            x, y, direction)
+    def cadence(limit):
+        def decorate(funct):
+            @wraps(funct)
+            def wrapper(*args, **kwargs):
+                t1 = int(round(time.time() * 1000))
+                this = args[0]
+                diff = t1 - this.last_shoot
+                if limit > diff:
+                    return None
+                this.last_shoot = t1
+                return funct(*args, **kwargs)
 
-    def fire2(self, x, y, direction=constants.RIGHT):
-        self.bullets -= 1
-        return Bullet(
-            CustomSprite(constants.IMAGES + "characters/weapon/green_shoot.png", frames=3, is_vertical=False,
-                         refresh_time=100),
-            x, y, direction, power=100, distance=500, velocity=5)
+            return wrapper
+
+        return decorate
+
+    def fire(self, key, direction, rect):
+        return self.type_bullets[key](direction, rect)
+
+    @cadence(limit=300)
+    def normal(self, direction, rect):
+        return Bullet(CustomSprite(constants.COMMON_BULLET, frames=1, is_vertical=False, refresh_time=100),
+                      direction, rect)
+
+    @cadence(limit=500)
+    def special(self, direction, rect):
+        return Bullet(CustomSprite(constants.SPECIAL_BULLET, frames=3, is_vertical=False, refresh_time=100),
+                      direction, rect, 100, 500, 5)
 
 
 class Bullet:
 
-    def __init__(self, p_sprite: CustomSprite, x, y, direction=constants.LEFT, power=50, distance=185, velocity=4):
+    def __init__(self, p_sprite: CustomSprite, direction, rect, power=50, distance=185, velocity=4):
         self.power = power
         self.sprite: CustomSprite = p_sprite
-
         self.distance = distance
-
-        self.sprite.rect.x = x
-        self.sprite.rect.y = y
-
         self.velocity = velocity
         self.move_function = None
-        self.direction = direction
-        self.select_direction()
         self.is_alive = True
+        self.direction = direction
+        self.sprite.rect.x = rect.x
+        self.sprite.rect.y = rect.y
+        self.init_sprite()
 
-    def select_direction(self):
+    def init_sprite(self):
+
         if self.direction == constants.LEFT:
             self.move_function = self._move_x
             self.velocity *= -1

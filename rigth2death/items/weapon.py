@@ -7,6 +7,23 @@ from utils import constants
 from utils.custom_sprite import CustomSprite
 
 
+def cadence(limit):
+    def decorate(funct):
+        @wraps(funct)
+        def wrapper(*args, **kwargs):
+            t1 = int(round(time.time() * 1000))
+            this = args[0]
+            diff = t1 - this.last_shoot
+            if limit > diff:
+                return None
+            this.last_shoot = t1
+            return funct(*args, **kwargs)
+
+        return wrapper
+
+    return decorate
+
+
 class Weapon:
 
     def __init__(self):
@@ -16,22 +33,6 @@ class Weapon:
         self.distance = 10
         self.last_shoot = int(round(time.time() * 1000))
         self.type_bullets = {K_SPACE: self.normal, K_LCTRL: self.special}
-
-    def cadence(limit):
-        def decorate(funct):
-            @wraps(funct)
-            def wrapper(*args, **kwargs):
-                t1 = int(round(time.time() * 1000))
-                this = args[0]
-                diff = t1 - this.last_shoot
-                if limit > diff:
-                    return None
-                this.last_shoot = t1
-                return funct(*args, **kwargs)
-
-            return wrapper
-
-        return decorate
 
     def fire(self, key, direction, rect):
         return self.type_bullets[key](direction, rect)

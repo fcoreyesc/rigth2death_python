@@ -1,3 +1,5 @@
+from functools import wraps
+
 import pygame
 import pygame.midi
 from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP
@@ -11,6 +13,22 @@ from scenarios.elements import LifeSprite
 from utils import constants
 from utils.constants import BGROUND_MUSIC
 from utils.custom_sprite import CustomSprite
+
+
+def display_refresh(fps: int):
+    def decorate(funct):
+        @wraps(funct)
+        def wrapper(*args, **kwargs):
+            this = args[0]
+            this.screen.fill((0, 0, 0))
+            result = funct(*args, **kwargs)
+            pygame.display.update()
+            this.clock.tick(fps)
+            return result
+
+        return wrapper
+
+    return decorate
 
 
 class Camera:
@@ -46,21 +64,21 @@ class TiledMap:
         self.blockers: list[pygame.Rect] = []
 
     def render(self, surface):
-        ti = self.tmx_data.get_tile_image_by_gid
         for layer in self.tmx_data.visible_layers:
-            if isinstance(layer, pytmx.TiledTileLayer):
-                for x, y, gid, in layer:
-                    tile = ti(gid)
-                    if tile:
-                        tile_width = x * self.tmx_data.tilewidth
-                        tile_height = y * self.tmx_data.tileheight
-                        surface.blit(tile, (tile_width,
-                                            tile_height))
-                        if "block" in layer.name:
-                            self.blockers.append(
-                                pygame.Rect(tile_width, tile_height, self.tmx_data.tilewidth, self.tmx_data.tileheight))
+            if not (isinstance(layer, pytmx.TiledTileLayer)):
+                pass
 
-    def make_map(self):
+            for x_position, y_position, gid, in layer:
+                tile = self.tmx_data.get_tile_image_by_gid(gid)
+                if tile:
+                    tile_width = x_position * self.tmx_data.tilewidth
+                    tile_height = y_position * self.tmx_data.tileheight
+                    surface.blit(tile, (tile_width, tile_height))
+                    if "block" in layer.name:
+                        self.blockers.append(
+                            pygame.Rect(tile_width, tile_height, self.tmx_data.tilewidth, self.tmx_data.tileheight))
+
+    def build_map(self):
         temp_surface = pygame.Surface((self.width, self.height))
         self.render(temp_surface)
         return temp_surface
@@ -85,40 +103,41 @@ class Stage:
         self.allowed_moves = allowed_moves
         self.running = True
         self.camera = Camera(self.map.width, self.map.height)
-        self.image_map = self.map.make_map()
+        self.image_map = self.map.build_map()
         self.stage_rect = self.image_map.get_rect()
+        self.clock = pygame.time.Clock()
 
     def run(self):
         pygame.mixer.music.load(BGROUND_MUSIC)
-
-        clock = pygame.time.Clock()
         pygame.mixer.music.play()
 
         for zombie in self.zombies:
             zombie.select_initial_position(self.map.width, self.map.height)
 
-        while self.running:
-            self.clear_display()
+        while self.running and self.player.is_alive():
+            self.game_loop()
 
-            self.process_user_input()
-            self.process_player_moves()
-            self.move_camera_and_paint()
+        while self.player.play_death() and self.player.is_dead():
+            self.animate_death()
 
-            self.process_medikit()
-            self.process_death_zombies()
-            self.process_zombies()
-            self.process_shoots()
-            self.draw_things()
-            self.swap_display()
-
-            clock.tick(60)
         pygame.mixer.music.stop()
 
-    @staticmethod
-    def swap_display():
-        pygame.display.update()
+    @display_refresh(fps=60)
+    def animate_death(self):
+        self.screen.blit(self.player.get_image(), self.camera.apply(self.player.get_sprite()))
 
-    def draw_things(self):
+    @display_refresh(fps=60)
+    def game_loop(self):
+        self.process_user_input()
+        self.process_player_moves()
+        self.move_camera_and_paint_background()
+        self.process_medikit()
+        self.process_death_zombies()
+        self.process_zombies()
+        self.process_shoots()
+        self.draw_other_stuffs()
+
+    def draw_other_stuffs(self):
         self.screen.blit(self.life_sprite.sprite.image, (constants.WIDTH - self.life_sprite.sprite.original_width, 0))
 
     def clear_display(self):
@@ -137,18 +156,18 @@ class Stage:
             elif event.type == pygame.QUIT:
                 self.running = False
 
-    def move_camera_and_paint(self):
-        self.camera.update(self.player.current_sprite)
+    def move_camera_and_paint_background(self):
+        self.camera.update(self.player.get_sprite())
         self.screen.blit(self.image_map, self.camera.apply_rect(self.stage_rect))
-        self.screen.blit(self.player.current_sprite.image, self.camera.apply(self.player.current_sprite))
+        self.screen.blit(self.player.get_image(), self.camera.apply(self.player.get_sprite()))
 
     def process_player_moves(self):
         if len(self.moves) > 0:
-            a = self.moves.pop()
-            possible_bullet = self.player.move(a)
+            move = self.moves.pop()
+            possible_bullet = self.player.move(move)
             if isinstance(possible_bullet, Bullet):
                 self.bullets.append(possible_bullet)
-            self.moves.append(a)
+            self.moves.append(move)
 
     def process_shoots(self) -> None:
         for bullet in self.bullets:
@@ -165,10 +184,10 @@ class Stage:
     def process_zombies(self) -> None:
 
         for zombie in self.zombies:
-            zombie.move(self.player.current_sprite, self.map.blockers)
+            zombie.move(self.player.selected_sprite, self.map.blockers)
             self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
 
-            if zombie.sprite.collide_with(self.player.current_sprite):
+            if zombie.sprite.collide_with(self.player.selected_sprite):
                 self.player.receive_damage(zombie.power)
 
             for bullet in self.bullets:
@@ -193,7 +212,7 @@ class Stage:
 
         if self.medikit.is_visible:
             self.screen.blit(self.medikit.sprite.image, self.camera.apply(self.medikit.sprite))
-            if self.medikit.sprite.collide_with(self.player.current_sprite):
+            if self.medikit.sprite.collide_with(self.player.selected_sprite):
                 self.player.recover(self.medikit.heal)
                 self.medikit.hide()
 

@@ -22,7 +22,7 @@ class Player:
 
         self.current_k_sprite = K_RIGHT
         self.selected_sprite = self.movement_sprites.get(self.current_k_sprite)
-        self.selected_sprite.move(400, 400)
+        self.selected_sprite.move(400, 350)
         self.speed = 4
         self.health: Health = Health()
         self.no_damage_timer = 100
@@ -30,7 +30,7 @@ class Player:
         self.recover_observer = recover_observer
         self.weapon = Weapon()
 
-    def move(self, key):
+    def move(self, key, blockers):
 
         if self.health.is_dead():
             return
@@ -52,6 +52,8 @@ class Player:
             self.selected_sprite = selected_sprite
             self.selected_sprite.init_image_vars()
 
+        last_move = (self.selected_sprite.rect.x, self.selected_sprite.rect.y)
+
         if key == K_UP:
             self.selected_sprite.move(self.selected_sprite.x(), self.selected_sprite.y() - self.speed)
         elif key == K_DOWN:
@@ -60,6 +62,9 @@ class Player:
             self.selected_sprite.move(self.selected_sprite.x() + self.speed, self.selected_sprite.y())
         elif key == K_LEFT:
             self.selected_sprite.move(self.selected_sprite.x() - self.speed, self.selected_sprite.y())
+
+        if self.selected_sprite.rect.collidelist(blockers) != -1:
+            self.selected_sprite.move(last_move[0], last_move[1])
 
         self.selected_sprite.play()
 

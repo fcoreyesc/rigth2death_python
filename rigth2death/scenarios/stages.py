@@ -109,6 +109,7 @@ class Stage:
 
     def run(self):
         pygame.mixer.music.load(BGROUND_MUSIC)
+        pygame.mixer.music.set_volume(0.1)
         pygame.mixer.music.play()
 
         for zombie in self.zombies:
@@ -164,7 +165,7 @@ class Stage:
     def process_player_moves(self):
         if len(self.moves) > 0:
             move = self.moves.pop()
-            possible_bullet = self.player.move(move)
+            possible_bullet = self.player.move(move,self.map.blockers)
             if isinstance(possible_bullet, Bullet):
                 self.bullets.append(possible_bullet)
             self.moves.append(move)

@@ -3,7 +3,8 @@ from functools import wraps
 import pygame
 import pygame.midi
 from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP
-from pytmx import pytmx, load_pygame
+from pygame.sprite import Group
+from pytmx import load_pygame
 
 from characters.enemies.zombies import Zombie, ZombieFactory
 from characters.player import Player
@@ -12,7 +13,7 @@ from items.weapon import Bullet
 from scenarios.elements import LifeSprite
 from utils import constants
 from utils.constants import BGROUND_MUSIC
-from utils.custom_sprite import CustomSprite
+from utils.custom_sprite import CustomSprite, BlockSprite
 
 
 def display_refresh(fps: int):
@@ -62,21 +63,24 @@ class TiledMap:
         self.height = tm.height * tm.tileheight
         self.tmx_data = tm
         self.blockers: list[pygame.Rect] = []
+        self.mask_blockers = []
+        self.mask_sprite_group = Group()
 
     def render(self, surface):
+        id = 1
         for layer in self.tmx_data.visible_layers:
-            if not (isinstance(layer, pytmx.TiledTileLayer)):
-                pass
+            for x_position, y_position, img_surface, in layer.tiles():
+                tile_width = x_position * self.tmx_data.tilewidth
+                tile_height = y_position * self.tmx_data.tileheight
+                surface.blit(img_surface, (tile_width, tile_height))
+                if "block" in layer.name:
+                    self.blockers.append(
+                        pygame.Rect(tile_width, tile_height, self.tmx_data.tilewidth, self.tmx_data.tileheight))
+                if "mask" in layer.name:
+                    self.mask_blockers.append(
+                        BlockSprite(img_surface, (tile_width, tile_height), self.mask_sprite_group, id))
 
-            for x_position, y_position, gid, in layer:
-                tile = self.tmx_data.get_tile_image_by_gid(gid)
-                if tile:
-                    tile_width = x_position * self.tmx_data.tilewidth
-                    tile_height = y_position * self.tmx_data.tileheight
-                    surface.blit(tile, (tile_width, tile_height))
-                    if "block" in layer.name:
-                        self.blockers.append(
-                            pygame.Rect(tile_width, tile_height, self.tmx_data.tilewidth, self.tmx_data.tileheight))
+                    id += 1
 
     def build_map(self):
         temp_surface = pygame.Surface((self.width, self.height))
@@ -96,7 +100,7 @@ class Stage:
         self.player.recover_observer = self.life_sprite.playback
         self.medikit = MediKit()
 
-        self.zombies = [ZombieFactory.generate() for _ in range(10)]
+        self.zombies = [ZombieFactory.generate() for _ in range(1)]
         self.death_zombies: list[Zombie] = []
         self.bullets: list[Bullet] = []
         self.moves = []
@@ -109,8 +113,8 @@ class Stage:
 
     def run(self):
         pygame.mixer.music.load(BGROUND_MUSIC)
-        pygame.mixer.music.set_volume(0.1)
-        pygame.mixer.music.play()
+        pygame.mixer.music.set_volume(0.05)
+      #  pygame.mixer.music.play()
 
         for zombie in self.zombies:
             zombie.select_initial_position(self.map.width, self.map.height)
@@ -165,7 +169,9 @@ class Stage:
     def process_player_moves(self):
         if len(self.moves) > 0:
             move = self.moves.pop()
-            possible_bullet = self.player.move(move,self.map.blockers)
+            possible_bullet = self.player.move(move, self.map.blockers, self.map.mask_blockers,
+                                               self.map.mask_sprite_group)
+
             if isinstance(possible_bullet, Bullet):
                 self.bullets.append(possible_bullet)
             self.moves.append(move)

@@ -7,6 +7,16 @@ from pygame import transform
 from utils.utils import get_image_frames_y, get_image_frames_x
 
 
+class BlockSprite(pygame.sprite.Sprite):
+
+    def __init__(self, surface, position, group, id):
+        super().__init__(group)
+        self.image = surface
+        self.rect = self.image.get_rect(topleft=position)
+        self.mask = pygame.mask.from_surface(self.image.convert_alpha())
+        self.id = id
+
+
 class CustomSprite(pygame.sprite.Sprite):
     def __init__(self, filename, frames=1, is_vertical=True, scale: int = 0, refresh_time=500):
         pygame.sprite.Sprite.__init__(self)
@@ -34,11 +44,11 @@ class CustomSprite(pygame.sprite.Sprite):
         self.current_image = 0
         self.rect = self.image.get_rect()
 
-        self.mask = pygame.mask.from_surface(self.image)
         self.scale = scale
         self.sequence = frames
         self.refresh_time = refresh_time
         self.sum_refresh = 0
+        self.mask = pygame.mask.from_surface(self.image)
 
     def add_image(self, filename):
         self.images.append(load_image(filename))
@@ -71,6 +81,14 @@ class CustomSprite(pygame.sprite.Sprite):
     def update_image_vars(self):
         self.image = self.images[self.current_image]
 
+    def update_internal_vars(self):
+        old_center = self.rect.center
+        self.rect = self.image.get_rect()
+        self.original_width = self.rect.width
+        self.original_height = self.rect.height
+        self.rect.center = old_center
+        self.mask = pygame.mask.from_surface(self.image)
+
     def init_image_vars(self):
         self.current_image = 0
         self.update_image_vars()
@@ -99,6 +117,9 @@ class CustomSprite(pygame.sprite.Sprite):
 
     def collide_with(self, sprite: 'CustomSprite') -> bool:
         return self.rect.colliderect(sprite.rect)
+
+    def get_mask(self) -> pygame.mask.Mask:
+        return pygame.mask.from_surface(self.image)
 
 
 def load_image(file_name):

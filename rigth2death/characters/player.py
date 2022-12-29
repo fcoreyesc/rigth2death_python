@@ -13,7 +13,7 @@ class Player:
     def __init__(self, damage_observer=None, recover_observer=None):
         self.movement_sprites = {
             K_UP: CustomSprite(utils.img_player(constants.PLAYER_UP), 8, refresh_time=80),
-            K_DOWN: CustomSprite(utils.img_player(constants.PLAYER_DOWN), 8, refresh_time=80),
+            K_DOWN: CustomSprite(utils.img_player(constants.PLAYER_DOWN), 8, is_vertical=False, refresh_time=80),
             K_LEFT: CustomSprite(utils.img_player(constants.PLAYER_RIGHT), 7, refresh_time=80).flip(horizontal=True),
             K_RIGHT: CustomSprite(utils.img_player(constants.PLAYER_RIGHT), 7, refresh_time=80)
         }
@@ -30,7 +30,7 @@ class Player:
         self.recover_observer = recover_observer
         self.weapon = Weapon()
 
-    def move(self, key, blockers):
+    def move(self, key, blockers, masks, group):
 
         if self.health.is_dead():
             return
@@ -63,10 +63,22 @@ class Player:
         elif key == K_LEFT:
             self.selected_sprite.move(self.selected_sprite.x() - self.speed, self.selected_sprite.y())
 
+        self.get_sprite().play()
+
         if self.selected_sprite.rect.collidelist(blockers) != -1:
             self.selected_sprite.move(last_move[0], last_move[1])
 
-        self.selected_sprite.play()
+        asd = pygame.sprite.spritecollideany(self.selected_sprite, group)
+        if asd is not None:
+            offset = (asd.rect.x - self.get_sprite().rect.x), (asd.rect.y - self.get_sprite().rect.y)
+            aeee = self.get_sprite().get_mask().overlap(asd.mask, offset)
+            if aeee:
+                self.selected_sprite.move(last_move[0], last_move[1])
+                print(f" {aeee}")
+                print(f'{asd.rect} {asd.image.get_masks()} {asd.id}')
+
+
+
 
     def play_death(self):
         if len(self.death_sprite.images) == self.death_sprite.current_image + 1:

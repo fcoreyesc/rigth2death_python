@@ -2,8 +2,9 @@ from functools import wraps
 
 import pygame
 import pygame.midi
-from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP
-from pytmx import pytmx, load_pygame
+from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP, K_RIGHT, K_LEFT
+from pygame.sprite import Group
+from pytmx import load_pygame
 
 from characters.enemies.zombies import Zombie, ZombieFactory
 from characters.player import Player
@@ -12,7 +13,7 @@ from items.weapon import Bullet
 from scenarios.elements import LifeSprite
 from utils import constants
 from utils.constants import BGROUND_MUSIC
-from utils.custom_sprite import CustomSprite
+from utils.custom_sprite import CustomSprite, BlockSprite
 
 
 def display_refresh(fps: int):
@@ -62,21 +63,22 @@ class TiledMap:
         self.height = tm.height * tm.tileheight
         self.tmx_data = tm
         self.blockers: list[pygame.Rect] = []
+        self.mask_sprite_group = Group()
 
     def render(self, surface):
+        index = 1
         for layer in self.tmx_data.visible_layers:
-            if not (isinstance(layer, pytmx.TiledTileLayer)):
-                pass
+            for x_position, y_position, img_surface, in layer.tiles():
+                tile_width = x_position * self.tmx_data.tilewidth
+                tile_height = y_position * self.tmx_data.tileheight
+                surface.blit(img_surface, (tile_width, tile_height))
+                if "block" in layer.name:
+                    self.blockers.append(
+                        pygame.Rect(tile_width, tile_height, self.tmx_data.tilewidth, self.tmx_data.tileheight))
+                if "mask" in layer.name:
+                    BlockSprite(img_surface, (tile_width, tile_height), self.mask_sprite_group, index)
 
-            for x_position, y_position, gid, in layer:
-                tile = self.tmx_data.get_tile_image_by_gid(gid)
-                if tile:
-                    tile_width = x_position * self.tmx_data.tilewidth
-                    tile_height = y_position * self.tmx_data.tileheight
-                    surface.blit(tile, (tile_width, tile_height))
-                    if "block" in layer.name:
-                        self.blockers.append(
-                            pygame.Rect(tile_width, tile_height, self.tmx_data.tilewidth, self.tmx_data.tileheight))
+                index += 1
 
     def build_map(self):
         temp_surface = pygame.Surface((self.width, self.height))
@@ -93,10 +95,10 @@ class Stage:
         self.life_sprite: LifeSprite = LifeSprite()
         self.player: Player = Player()
         self.player.damage_observer = self.life_sprite.play
-        self.player.recover_observer = self.life_sprite.playback
+        self.player.recover_observer = self.life_sprite.rewind
         self.medikit = MediKit()
 
-        self.zombies = [ZombieFactory.generate() for _ in range(10)]
+        self.zombies = [ZombieFactory.generate() for _ in range(30)]
         self.death_zombies: list[Zombie] = []
         self.bullets: list[Bullet] = []
         self.moves = []
@@ -107,9 +109,11 @@ class Stage:
         self.stage_rect = self.image_map.get_rect()
         self.clock = pygame.time.Clock()
 
+        self.font = pygame.font.Font(None, 50)
+
     def run(self):
         pygame.mixer.music.load(BGROUND_MUSIC)
-        pygame.mixer.music.set_volume(0.1)
+        pygame.mixer.music.set_volume(0.02)
         pygame.mixer.music.play()
 
         for zombie in self.zombies:
@@ -123,7 +127,7 @@ class Stage:
 
         pygame.mixer.music.stop()
 
-    @display_refresh(fps=60)
+    @display_refresh(fps=30)
     def animate_death(self):
         self.screen.blit(self.player.get_image(), self.camera.apply(self.player.get_sprite()))
 
@@ -131,6 +135,7 @@ class Stage:
     def game_loop(self):
         self.process_user_input()
         self.process_player_moves()
+        self.process_player_collisions()
         self.move_camera_and_paint_background()
         self.process_medikit()
         self.process_death_zombies()
@@ -165,10 +170,29 @@ class Stage:
     def process_player_moves(self):
         if len(self.moves) > 0:
             move = self.moves.pop()
-            possible_bullet = self.player.move(move,self.map.blockers)
+            possible_bullet = self.player.move(move)
+
             if isinstance(possible_bullet, Bullet):
                 self.bullets.append(possible_bullet)
             self.moves.append(move)
+
+    def process_player_collisions(self):
+        if self.player.get_sprite().rect.collidelist(self.map.blockers) != -1:
+            self.player.previous_move()
+        self.check_mask_collisions(self.map.mask_sprite_group)
+
+    def check_mask_collisions(self, group):
+        collided_sprite = pygame.sprite.spritecollideany(self.player.get_sprite(), group)
+
+        if collided_sprite is not None:
+            offset = (collided_sprite.rect.x - self.player.get_sprite().rect.x), (
+                    collided_sprite.rect.y - self.player.get_sprite().rect.y)
+
+            overlapped_mask = self.player.get_mask().overlap(collided_sprite.mask, offset)
+
+            if overlapped_mask:
+                self.player.previous_move()
+                self.check_mask_collisions(group)
 
     def process_shoots(self) -> None:
         for bullet in self.bullets:
@@ -176,19 +200,19 @@ class Stage:
                 bullet.move()
                 self.screen.blit(bullet.sprite.image, self.camera.apply(bullet.sprite))
 
-                if bullet.sprite.rect.collidelist(self.map.blockers) != -1:
+                if bullet.sprite.rect.collidelist(self.map.blockers) != -1 or pygame.sprite.spritecollideany(
+                        bullet.sprite, self.map.mask_sprite_group):
                     bullet.destroy()
-
             else:
                 self.bullets.remove(bullet)
 
     def process_zombies(self) -> None:
 
         for zombie in self.zombies:
-            zombie.move(self.player.selected_sprite, self.map.blockers)
+            zombie.move(self.player.get_sprite(), self.map.blockers, self.map.mask_sprite_group)
             self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
 
-            if zombie.sprite.collide_with(self.player.selected_sprite):
+            if zombie.sprite.collide_with(self.player.get_sprite()):
                 self.player.receive_damage(zombie.power)
 
             for bullet in self.bullets:

@@ -2,10 +2,13 @@ import enum
 import random
 from abc import ABC
 
+import pygame
+
 from characters.health import Health
 from utils import utils
 from utils.custom_sprite import CustomSprite
 
+from pygame.sprite import Group
 
 class SpritesEnum(enum.Enum):
     LEFT = 1
@@ -50,11 +53,12 @@ class Zombie(ABC):
         return wrapper
 
     @change_sprite
-    def move(self, player: CustomSprite, blockers):
+    def move(self, player: CustomSprite, blockers, sprite_group):
 
         if self.selected_strategy == 'basic':
             self.basic_move_strategy(player)
-            if self.sprite.rect.collidelist(blockers) != -1:
+            if self.sprite.rect.collidelist(blockers) != -1 or \
+                    pygame.sprite.spritecollideany(self.sprite, sprite_group):
                 self.selected_strategy = 'other'
         else:
             if len(self.last_movements) > 0:

@@ -13,6 +13,6 @@ class LifeSprite:
         for _ in range(times):
             self.sprite.play()
 
-    def playback(self, times=1):
+    def rewind(self, times=1):
         for _ in range(times):
-            self.sprite.playback()
+            self.sprite.rewind()

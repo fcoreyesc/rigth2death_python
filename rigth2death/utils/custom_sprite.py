@@ -13,7 +13,7 @@ class BlockSprite(pygame.sprite.Sprite):
         super().__init__(group)
         self.image = surface
         self.rect = self.image.get_rect(topleft=position)
-        self.mask = pygame.mask.from_surface(self.image.convert_alpha())
+        self.mask = pygame.mask.from_surface(self.image)
         self.id = id
 
 
@@ -71,7 +71,7 @@ class CustomSprite(pygame.sprite.Sprite):
 
         self.update_image_vars()
 
-    def playback(self):
+    def rewind(self):
         self.current_image -= 1
         if self.current_image < 0:
             self.current_image = self.sequence - 1

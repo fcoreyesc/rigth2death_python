@@ -7,6 +7,7 @@ from items.weapon import Weapon
 from utils import utils, constants
 from utils.constants import DIRECTIONS
 from utils.custom_sprite import CustomSprite
+from utils.utils import FixedListAdapter
 
 
 class Player:
@@ -29,8 +30,9 @@ class Player:
         self.damage_observer = damage_observer
         self.recover_observer = recover_observer
         self.weapon = Weapon()
+        self.last_movements = FixedListAdapter()
 
-    def move(self, key, blockers, masks, group):
+    def move(self, key):
 
         if self.health.is_dead():
             return
@@ -43,6 +45,8 @@ class Player:
         if selected_sprite is None:
             return
 
+        self.last_movements.append((self.selected_sprite.rect.x, self.selected_sprite.rect.y))
+
         if key != self.current_k_sprite:
             self.current_k_sprite = key
 
@@ -50,9 +54,6 @@ class Player:
             selected_sprite.rect.y = self.selected_sprite.y()
 
             self.selected_sprite = selected_sprite
-            self.selected_sprite.init_image_vars()
-
-        last_move = (self.selected_sprite.rect.x, self.selected_sprite.rect.y)
 
         if key == K_UP:
             self.selected_sprite.move(self.selected_sprite.x(), self.selected_sprite.y() - self.speed)
@@ -65,20 +66,10 @@ class Player:
 
         self.get_sprite().play()
 
-        if self.selected_sprite.rect.collidelist(blockers) != -1:
-            self.selected_sprite.move(last_move[0], last_move[1])
-
-        asd = pygame.sprite.spritecollideany(self.selected_sprite, group)
-        if asd is not None:
-            offset = (asd.rect.x - self.get_sprite().rect.x), (asd.rect.y - self.get_sprite().rect.y)
-            aeee = self.get_sprite().get_mask().overlap(asd.mask, offset)
-            if aeee:
-                self.selected_sprite.move(last_move[0], last_move[1])
-                print(f" {aeee}")
-                print(f'{asd.rect} {asd.image.get_masks()} {asd.id}')
-
-
-
+    def previous_move(self):
+        if self.last_movements.has_elements():
+            prev_move = self.last_movements.pop()
+            self.selected_sprite.move(prev_move[0], prev_move[1])
 
     def play_death(self):
         if len(self.death_sprite.images) == self.death_sprite.current_image + 1:
@@ -87,7 +78,6 @@ class Player:
         return True
 
     def receive_damage(self, damage: int) -> None:
-
         if self.is_dead():
             return
 
@@ -105,7 +95,6 @@ class Player:
             self.death_sprite.y(self.selected_sprite.y())
 
     def recover(self, health_points: int):
-
         if self.health.is_life_full():
             return
 
@@ -127,8 +116,11 @@ class Player:
     def get_image(self):
         return self.selected_sprite.image if self.is_alive() else self.death_sprite.image
 
-    def get_sprite(self):
+    def get_sprite(self) -> CustomSprite:
         return self.selected_sprite if self.is_alive() else self.death_sprite
+
+    def get_mask(self):
+        return self.selected_sprite.get_mask()
 
 
 def flip(param: CustomSprite, horizontal=False, vertical=False):

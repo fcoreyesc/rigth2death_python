@@ -39,18 +39,31 @@ class Weapon:
 
     @cadence(limit=300)
     def normal(self, direction, rect):
+        positions = {
+            constants.LEFT: (rect.midleft[0], rect.midleft[1]),
+            constants.RIGHT: (rect.midright[0], rect.midright[1]),
+            constants.UP: (rect.midtop[0], rect.midtop[1]),
+            constants.DOWN: (rect.midbottom[0], rect.midbottom[1])
+        }
+
         return Bullet(CustomSprite(constants.COMMON_BULLET, frames=1, is_vertical=False, refresh_time=100),
-                      direction, rect)
+                      direction, positions)
 
     @cadence(limit=500)
     def special(self, direction, rect):
+        positions = {
+            constants.LEFT: (rect.topleft[0], rect.topleft[1]),
+            constants.RIGHT: (rect.topright[0], rect.topright[1]),
+            constants.UP: (rect.topleft[0], rect.topleft[1]),
+            constants.DOWN: (rect.bottomleft[0], rect.bottomleft[1])
+        }
         return Bullet(CustomSprite(constants.SPECIAL_BULLET, frames=3, is_vertical=False, refresh_time=100),
-                      direction, rect, 100, 500, 5)
+                      direction, positions, 100, 500, 5)
 
 
 class Bullet:
 
-    def __init__(self, p_sprite: CustomSprite, direction, rect, power=50, distance=185, velocity=4):
+    def __init__(self, p_sprite: CustomSprite, direction, positions, power=50, distance=185, velocity=4):
         self.power = power
         self.sprite: CustomSprite = p_sprite
         self.distance = distance
@@ -58,8 +71,7 @@ class Bullet:
         self.move_function = None
         self.is_alive = True
         self.direction = direction
-        self.sprite.rect.x = rect.x
-        self.sprite.rect.y = rect.y
+        self.positions = positions
         self.init_sprite()
 
     def init_sprite(self):
@@ -68,15 +80,21 @@ class Bullet:
             self.move_function = self._move_x
             self.velocity *= -1
             self.sprite.flip(horizontal=True)
+
         elif self.direction == constants.RIGHT:
             self.move_function = self._move_x
+
         elif self.direction == constants.UP:
             self.move_function = self._move_y
             self.velocity *= -1
             self.sprite.flip(horizontal=False, vertical=False, rotate=True)
+
         elif self.direction == constants.DOWN:
             self.move_function = self._move_y
             self.sprite.flip(horizontal=False, vertical=True, rotate=True)
+
+        self.sprite.rect.x = self.positions[self.direction][0]
+        self.sprite.rect.y = self.positions[self.direction][1]
 
     def _move_x(self, x):
         self.sprite.rect.x += x

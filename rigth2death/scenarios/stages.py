@@ -185,9 +185,13 @@ class Stage:
     def process_player_collisions(self):
         if self.player.get_sprite().rect.collidelist(self.map.blockers) != -1:
             self.player.previous_move()
+            return
         self.check_mask_collisions(self.map.mask_sprite_group)
 
     def check_mask_collisions(self, group):
+        if self.player.last_movements.is_empty():
+            return
+
         collided_sprite = pygame.sprite.spritecollideany(self.player.get_sprite(), group)
 
         if collided_sprite is not None:

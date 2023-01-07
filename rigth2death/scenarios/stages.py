@@ -1,8 +1,9 @@
 from functools import wraps
 
+import numpy as np
 import pygame
 import pygame.midi
-from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP, K_RIGHT, K_LEFT
+from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP
 from pygame.sprite import Group
 from pytmx import load_pygame
 
@@ -64,18 +65,23 @@ class TiledMap:
         self.tmx_data = tm
         self.blockers: list[pygame.Rect] = []
         self.mask_sprite_group = Group()
+        self.matrix_representation = np.array([0] * (self.tmx_data.height * self.tmx_data.width)).reshape(
+            self.tmx_data.width, self.tmx_data.height)
 
     def render(self, surface):
         index = 1
         for layer in self.tmx_data.visible_layers:
             for x_position, y_position, img_surface, in layer.tiles():
+
                 tile_width = x_position * self.tmx_data.tilewidth
                 tile_height = y_position * self.tmx_data.tileheight
                 surface.blit(img_surface, (tile_width, tile_height))
                 if "block" in layer.name:
+                    self.matrix_representation[x_position][y_position] = 1
                     self.blockers.append(
                         pygame.Rect(tile_width, tile_height, self.tmx_data.tilewidth, self.tmx_data.tileheight))
                 if "mask" in layer.name:
+                    self.matrix_representation[x_position][y_position] = 1
                     BlockSprite(img_surface, (tile_width, tile_height), self.mask_sprite_group, index)
 
                 index += 1

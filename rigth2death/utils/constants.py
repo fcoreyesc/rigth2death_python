@@ -12,6 +12,7 @@ IMAGES = RESOURCES + "img/"
 MAPS = RESOURCES + "maps/"
 MUSIC = RESOURCES + "sound/"
 PLAYER = RESOURCES + "characters/player/"
+OTHERS = RESOURCES + "characters/others/"
 
 LEFT = 1
 RIGHT = 2

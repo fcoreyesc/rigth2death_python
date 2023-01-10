@@ -36,7 +36,7 @@ def img_player(name):
     return constants.IMAGES + 'characters/player/{}'.format(name)
 
 
-def img_player_stuffs(name):
+def img_stuffs(name):
     return img_player("../others/{}".format(name))
 
 

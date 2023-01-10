@@ -1,5 +1,6 @@
 import enum
 import random
+import time
 from abc import ABC
 
 import pygame
@@ -8,7 +9,6 @@ from characters.health import Health
 from utils import utils
 from utils.custom_sprite import CustomSprite
 
-from pygame.sprite import Group
 
 class SpritesEnum(enum.Enum):
     LEFT = 1
@@ -26,6 +26,9 @@ class Zombie(ABC):
         self.last_movements = []
         self.sprite = None
         self.death_sprite = None
+        self.move_list: list = []
+        self.sum_refresh = 0
+        self.refresh_time = 10000
 
     def select_initial_position(self, width, height):
         if random.randrange(0, 2) == 0:
@@ -65,6 +68,35 @@ class Zombie(ABC):
                 self.last_move_strategy()
             else:
                 self.selected_strategy = 'basic'
+
+    @change_sprite
+    def path_move(self, path, reset=True):
+        refresh_time = int(round(time.time() * 1000)) - self.sum_refresh
+
+
+
+        if reset or len(self.move_list) == 0  or refresh_time > self.refresh_time:
+            self.sum_refresh = int(round(time.time() * 1000))
+            self.move_list = path[1:]
+
+        if len(self.move_list) > 0:
+            a = self.move_list.pop(0)
+
+            asd = (a[0] * 22) - self.sprite.x()
+            qwe = (a[1] * 20) - self.sprite.y()
+
+            if abs(asd) > self.speed:
+                self.sprite.x(self.sprite.x() + (self.speed if asd > 0 else - self.speed))
+            elif abs(asd) <= self.speed:
+                self.sprite.x(self.sprite.x() + (asd if asd > 0 else - asd))
+
+            if abs(qwe) > self.speed:
+                self.sprite.y(self.sprite.y() + (self.speed if qwe > 0 else - self.speed))
+            elif abs(qwe) <= self.speed:
+                self.sprite.y(self.sprite.y() + (qwe if qwe > 0 else - qwe))
+
+
+
 
     def last_move_strategy(self):
         previous_move = self.last_movements.pop()

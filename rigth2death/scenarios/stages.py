@@ -236,7 +236,7 @@ class Stage:
 
             self.draw_zombie_path(paths)
 
-            # zombie.path_move(paths)
+            zombie.path_move(paths)
             if zombie.sprite.collide_with(self.player.get_sprite()):
                 self.player.receive_damage(zombie.power)
 
@@ -278,7 +278,7 @@ class Stage:
         rect, gap = self.fixing_position(mouse_pos)
 
         if self.click:
-            print(f' {gap[1]},gap[0]')
+            print(f' {gap[1]},{gap[0]}')
             print(f' mouse {mouse_pos} -- row col ({gap[3]},{gap[2]}) --  {rect} {self.camera.rectangle}')
             self.click = False
 
@@ -298,13 +298,15 @@ class Stage:
         return rect, (gap_y, gap_y, row, col)
 
     def draw_zombie_path(self, paths):
-        gap_x = self.camera.rectangle.x % self.map.tmx_data.tilewidth
-        gap_y = self.camera.rectangle.y % self.map.tmx_data.tileheight
+
         if paths:
             points = []
             for point in paths:
-                x = (point[0] * self.map.tmx_data.tilewidth) + (self.map.tmx_data.tilewidth // 2) + gap_x
-                y = (point[1] * self.map.tmx_data.tileheight) + (self.map.tmx_data.tileheight // 2) + gap_y
+                x = ((point[0] * self.map.tmx_data.tilewidth) + self.camera.rectangle.x) + (
+                        self.map.tmx_data.tilewidth // 2)
+                y = ((point[1] * self.map.tmx_data.tileheight) + self.camera.rectangle.y) + (
+                            self.map.tmx_data.tileheight // 2)
                 points.append((x, y))
+
             if len(points) > 1:
                 pygame.draw.lines(self.screen, '#4a4a4a', False, points, 5)

@@ -1,3 +1,4 @@
+import time
 from functools import wraps
 
 import numpy as np
@@ -17,7 +18,7 @@ from items.weapon import Bullet
 from scenarios.Camera import Camera
 from scenarios.elements import LifeSprite
 from utils import constants
-from utils.constants import BGROUND_MUSIC
+from utils.constants import BGROUND_MUSIC, LEFT
 from utils.custom_sprite import BlockSprite
 
 
@@ -109,7 +110,10 @@ class Stage:
             (self.map.tmx_data.tilewidth, self.map.tmx_data.tileheight)
         )
 
+        self.global_time = time.time()
+
         self.click = False
+        self.freeze = False
 
     def run(self):
         pygame.mixer.music.load(BGROUND_MUSIC)
@@ -117,8 +121,8 @@ class Stage:
         pygame.mixer.music.play()
 
         for zombie in self.zombies:
-            zombie.sprite.x(200)
-            zombie.sprite.y(500)
+            zombie.sprite.rect.x = 320
+            zombie.sprite.rect.y = 510
 
         while self.running and self.player.is_alive():
             self.game_loop()
@@ -167,8 +171,11 @@ class Stage:
                     self.moves.remove(event.key)
             elif event.type == pygame.QUIT:
                 self.running = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                self.click = True
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    self.click = True
+                elif event.button == 3:
+                    self.freeze = not self.freeze
 
     def move_camera_and_paint_background(self):
         self.camera.update(self.player.get_sprite())
@@ -221,22 +228,27 @@ class Stage:
     def process_zombies(self) -> None:
 
         for zombie in self.zombies:
-            self.grid.cleanup()
-            end = self.grid.node(self.player.get_sprite().rect.centerx // self.map.tmx_data.tilewidth,
-                                 self.player.get_sprite().rect.centery // self.map.tmx_data.tileheight)
+            if len(zombie.move_list) == 0:
+                print(f'empty list {time.time() - self.global_time}')
+                self.global_time = time.time()
+                self.grid.cleanup()
+                end = self.grid.node(self.player.get_sprite().rect.centerx // self.map.tmx_data.tilewidth,
+                                     self.player.get_sprite().rect.centery // self.map.tmx_data.tileheight)
 
-            x = zombie.sprite.rect.x // self.map.tmx_data.tilewidth
-            y = zombie.sprite.rect.y // self.map.tmx_data.tileheight
+                x = zombie.sprite.rect.centerx // self.map.tmx_data.tilewidth
+                y = zombie.sprite.rect.centery // self.map.tmx_data.tileheight
 
-            start = self.grid.node(x if x < self.map.tmx_data.width else x - 1,
-                                   y if y < self.map.tmx_data.height else y - 1)
+                start = self.grid.node(x if x < self.map.tmx_data.width else x - 1,
+                                       y if y < self.map.tmx_data.height else y - 1)
 
-            paths, runs = self.finder.find_path(start, end, self.grid)
-            # zombie.move(self.player.get_sprite(), self.map.blockers, self.map.mask_sprite_group)
+                paths, runs = self.finder.find_path(start, end, self.grid)
+                zombie.move_list = paths
 
-            self.draw_zombie_path(paths)
+            if self.freeze:
+                zombie.path_move()
 
-            zombie.path_move(paths)
+            self.draw_zombie_path(zombie.move_list)
+
             if zombie.sprite.collide_with(self.player.get_sprite()):
                 self.player.receive_damage(zombie.power)
 
@@ -278,7 +290,6 @@ class Stage:
         rect, gap = self.fixing_position(mouse_pos)
 
         if self.click:
-            print(f' {gap[1]},{gap[0]}')
             print(f' mouse {mouse_pos} -- row col ({gap[3]},{gap[2]}) --  {rect} {self.camera.rectangle}')
             self.click = False
 
@@ -295,7 +306,7 @@ class Stage:
         rect.centerx += gap_x
         rect.centery += gap_y
 
-        return rect, (gap_y, gap_y, row, col)
+        return rect, (gap_y, gap_x, row, col)
 
     def draw_zombie_path(self, paths):
 
@@ -305,8 +316,8 @@ class Stage:
                 x = ((point[0] * self.map.tmx_data.tilewidth) + self.camera.rectangle.x) + (
                         self.map.tmx_data.tilewidth // 2)
                 y = ((point[1] * self.map.tmx_data.tileheight) + self.camera.rectangle.y) + (
-                            self.map.tmx_data.tileheight // 2)
+                        self.map.tmx_data.tileheight // 2)
                 points.append((x, y))
 
             if len(points) > 1:
-                pygame.draw.lines(self.screen, '#4a4a4a', False, points, 5)
+                pygame.draw.lines(self.screen, '#ff0000', False, points, 5)

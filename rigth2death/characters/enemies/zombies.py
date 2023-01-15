@@ -70,33 +70,28 @@ class Zombie(ABC):
                 self.selected_strategy = 'basic'
 
     @change_sprite
-    def path_move(self, path, reset=True):
-        refresh_time = int(round(time.time() * 1000)) - self.sum_refresh
+    def path_move(self, reset=True):
 
+        if len(self.move_list) > 1:
 
+            last_move = (self.sprite.rect.x, self.sprite.rect.y)
+            last_move_center = (self.sprite.rect.centerx, self.sprite.rect.centery)
 
-        if reset or len(self.move_list) == 0  or refresh_time > self.refresh_time:
-            self.sum_refresh = int(round(time.time() * 1000))
-            self.move_list = path[1:]
-
-        if len(self.move_list) > 0:
             a = self.move_list.pop(0)
+            b = self.move_list.pop(0)
 
-            asd = (a[0] * 22) - self.sprite.x()
-            qwe = (a[1] * 20) - self.sprite.y()
+            if a[0] != b[0]:
+                self.sprite.x(self.sprite.x() + (self.speed if b[0] > a[0] else - self.speed))
+            elif a[1] != b[1]:
+                self.sprite.y(self.sprite.y() + (self.speed if b[1] > a[1] else - self.speed))
 
-            if abs(asd) > self.speed:
-                self.sprite.x(self.sprite.x() + (self.speed if asd > 0 else - self.speed))
-            elif abs(asd) <= self.speed:
-                self.sprite.x(self.sprite.x() + (asd if asd > 0 else - asd))
+            self.move_list.insert(0, b)
 
-            if abs(qwe) > self.speed:
-                self.sprite.y(self.sprite.y() + (self.speed if qwe > 0 else - self.speed))
-            elif abs(qwe) <= self.speed:
-                self.sprite.y(self.sprite.y() + (qwe if qwe > 0 else - qwe))
+            if (a[0] == self.sprite.rect.centerx // 22 and a[1] == self.sprite.rect.centery // 20):
+                self.move_list.insert(0, a)
 
-
-
+         #   print(
+          #      f'{self.sprite.rect} {len(self.move_list)} || {a}  {b} {(self.sprite.rect.centerx // 22, self.sprite.rect.centery // 20)} || {last_move} {last_move_center}')
 
     def last_move_strategy(self):
         previous_move = self.last_movements.pop()
@@ -141,7 +136,7 @@ class Zombie(ABC):
 class NormalZombie(Zombie):
 
     def __init__(self):
-        super().__init__(speed=2)
+        super().__init__(speed=3)
 
         self.death_sprite: CustomSprite = CustomSprite(utils.img('normal_zombie_death.png'),
                                                        7,
@@ -158,7 +153,7 @@ class NormalZombie(Zombie):
 class TrollZombie(Zombie):
 
     def __init__(self):
-        super().__init__(health=200)
+        super().__init__(health=200, speed=2)
         self.death_sprite: CustomSprite = CustomSprite(utils.img('troll_zombie_death.png'),
                                                        7,
                                                        is_vertical=False,

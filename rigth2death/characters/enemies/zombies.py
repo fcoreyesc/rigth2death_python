@@ -1,12 +1,13 @@
 import enum
 import random
-import time
 from abc import ABC
 
 import pygame
+from pathfinding.core.node import GridNode
 
 from characters.health import Health
 from utils import utils
+from utils.constants import LEFT, RIGHT, UP, DOWN
 from utils.custom_sprite import CustomSprite
 
 
@@ -60,8 +61,8 @@ class Zombie(ABC):
 
         if self.selected_strategy == 'basic':
             self.basic_move_strategy(player)
-            if self.sprite.rect.collidelist(blockers) != -1 or \
-                    pygame.sprite.spritecollideany(self.sprite, sprite_group):
+            if self.sprite.rect.collidelist(blockers) != -1 or pygame.sprite.spritecollideany(self.sprite,
+                                                                                              sprite_group):
                 self.selected_strategy = 'other'
         else:
             if len(self.last_movements) > 0:
@@ -70,28 +71,60 @@ class Zombie(ABC):
                 self.selected_strategy = 'basic'
 
     @change_sprite
-    def path_move(self, reset=True):
+    def path_move(self, blokers, reset=True):
 
         if len(self.move_list) > 1:
 
             last_move = (self.sprite.rect.x, self.sprite.rect.y)
             last_move_center = (self.sprite.rect.centerx, self.sprite.rect.centery)
 
-            a = self.move_list.pop(0)
-            b = self.move_list.pop(0)
+            a: GridNode = self.move_list.pop(0)
+            b: GridNode = self.move_list.pop(0)
 
-            if a[0] != b[0]:
-                self.sprite.x(self.sprite.x() + (self.speed if b[0] > a[0] else - self.speed))
-            elif a[1] != b[1]:
-                self.sprite.y(self.sprite.y() + (self.speed if b[1] > a[1] else - self.speed))
+            selected_speed = self.speed
+
+            if a.x != b.x:
+                mov = LEFT
+                if b.x < a.x:
+                    selected_speed = - self.speed
+                    mov = RIGHT
+                self.sprite.x(self.sprite.x() + selected_speed)
+            elif a.y != b.y:
+                mov = DOWN
+                if b.y < a.y:
+                    selected_speed = - self.speed
+                    mov = UP
+                self.sprite.y(self.sprite.y() + selected_speed)
 
             self.move_list.insert(0, b)
 
-            if (a[0] == self.sprite.rect.centerx // 22 and a[1] == self.sprite.rect.centery // 20):
-                self.move_list.insert(0, a)
+            # criteria for right movement
 
-         #   print(
-          #      f'{self.sprite.rect} {len(self.move_list)} || {a}  {b} {(self.sprite.rect.centerx // 22, self.sprite.rect.centery // 20)} || {last_move} {last_move_center}')
+            calc_x = lambda x, y, arr: arr[0] == x // 22 and arr[1] == y // 20
+
+            if mov == LEFT:
+                if self.sprite.rect.midleft[0] // 22 <= a.x:
+                    self.move_list.insert(0, a)
+                else:
+                    print(f"q wea {a.x} {self.sprite.rect.midleft[0] // 22}")
+
+                block = self.sprite.rect.collidelist(blokers)
+                if block != -1:
+                    var_block = blokers[block]
+                    print(f"{block} || {var_block}")
+
+            elif mov == RIGHT:
+                if (self.sprite.rect.midright[0] // 22 >= a.x):
+                    self.move_list.insert(0, a)
+                else:
+                    print(f"q wea {a.x} {self.sprite.rect.midleft[0] // 22}")
+
+            elif mov == DOWN:
+                if self.sprite.rect.centery // 20 <= a.y:
+                    self.move_list.insert(0, a)
+            elif mov == UP:
+                if self.sprite.rect.centery // 20 >= a.y:
+                    self.move_list.insert(0, a)
 
     def last_move_strategy(self):
         previous_move = self.last_movements.pop()
@@ -189,4 +222,5 @@ class ZombieFactory:
 
     @staticmethod
     def generate():
-        return ZombieFactory.strategy[random.randrange(0, len(ZombieFactory.strategy))]()
+        #   return ZombieFactory.strategy[random.randrange(0, len(ZombieFactory.strategy))]()
+        return ZombieFactory.strategy[2]()

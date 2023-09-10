@@ -18,7 +18,7 @@ from items.weapon import Bullet
 from scenarios.Camera import Camera
 from scenarios.elements import LifeSprite
 from utils import constants
-from utils.constants import BGROUND_MUSIC, LEFT
+from utils.constants import BGROUND_MUSIC
 from utils.custom_sprite import BlockSprite
 
 
@@ -121,8 +121,8 @@ class Stage:
         pygame.mixer.music.play()
 
         for zombie in self.zombies:
-            zombie.sprite.rect.x = 320
-            zombie.sprite.rect.y = 510
+            zombie.sprite.rect.x = 125
+            zombie.sprite.rect.y = 270
 
         while self.running and self.player.is_alive():
             self.game_loop()
@@ -228,7 +228,7 @@ class Stage:
     def process_zombies(self) -> None:
 
         for zombie in self.zombies:
-            if len(zombie.move_list) == 0:
+            if len(zombie.move_list) <= 1:
                 print(f'empty list {time.time() - self.global_time}')
                 self.global_time = time.time()
                 self.grid.cleanup()
@@ -245,7 +245,7 @@ class Stage:
                 zombie.move_list = paths
 
             if self.freeze:
-                zombie.path_move()
+                zombie.path_move(self.map.blockers)
 
             self.draw_zombie_path(zombie.move_list)
 
@@ -308,14 +308,14 @@ class Stage:
 
         return rect, (gap_y, gap_x, row, col)
 
-    def draw_zombie_path(self, paths):
+    def draw_zombie_path(self, paths: list):
 
         if paths:
             points = []
             for point in paths:
-                x = ((point[0] * self.map.tmx_data.tilewidth) + self.camera.rectangle.x) + (
+                x = ((point.x * self.map.tmx_data.tilewidth) + self.camera.rectangle.x) + (
                         self.map.tmx_data.tilewidth // 2)
-                y = ((point[1] * self.map.tmx_data.tileheight) + self.camera.rectangle.y) + (
+                y = ((point.y * self.map.tmx_data.tileheight) + self.camera.rectangle.y) + (
                         self.map.tmx_data.tileheight // 2)
                 points.append((x, y))
 

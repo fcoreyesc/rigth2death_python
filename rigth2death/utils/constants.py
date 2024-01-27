@@ -33,3 +33,5 @@ COMMON_BULLET = IMAGES + "characters/weapon/common_shoot.png"
 SPECIAL_BULLET = IMAGES + "characters/weapon/green_shoot.png"
 
 BGROUND_MUSIC = MUSIC + "audio.mid"
+
+DIRECTIONS_STR = {UP: "UP", DOWN: "DOWN", LEFT: "LEFT", RIGHT: "RIGHT"}

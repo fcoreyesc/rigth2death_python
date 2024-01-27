@@ -121,11 +121,11 @@ class Stage:
         pygame.mixer.music.play()
 
         for zombie in self.zombies:
-            zombie.sprite.rect.x = 125
-            zombie.sprite.rect.y = 270
+            zombie.sprite.rect.x = 387
+            zombie.sprite.rect.y = 263
 
         while self.running and self.player.is_alive():
-            self.game_loop()
+           self.game_loop()
 
         while self.player.play_death() and self.player.is_dead():
             self.animate_death()
@@ -172,10 +172,13 @@ class Stage:
             elif event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    self.click = True
-                elif event.button == 3:
-                    self.freeze = not self.freeze
+                self.mouse_events(event)
+
+    def mouse_events(self, event):
+        if event.button == 1:
+            self.click = True
+        elif event.button == 3:
+            self.freeze = not self.freeze
 
     def move_camera_and_paint_background(self):
         self.camera.update(self.player.get_sprite())
@@ -229,7 +232,6 @@ class Stage:
 
         for zombie in self.zombies:
             if len(zombie.move_list) <= 1:
-                print(f'empty list {time.time() - self.global_time}')
                 self.global_time = time.time()
                 self.grid.cleanup()
                 end = self.grid.node(self.player.get_sprite().rect.centerx // self.map.tmx_data.tilewidth,

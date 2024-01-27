@@ -6,7 +6,7 @@ import pygame
 from pathfinding.core.node import GridNode
 
 from characters.health import Health
-from utils import utils
+from utils import utils, constants
 from utils.constants import LEFT, RIGHT, UP, DOWN
 from utils.custom_sprite import CustomSprite
 
@@ -14,7 +14,9 @@ from utils.custom_sprite import CustomSprite
 class SpritesEnum(enum.Enum):
     LEFT = 1
     RIGHT = 2
-    DEATH = 3
+    UP = 3
+    DOWN = 4
+    DEATH = 5
 
 
 class Zombie(ABC):
@@ -30,6 +32,10 @@ class Zombie(ABC):
         self.move_list: list = []
         self.sum_refresh = 0
         self.refresh_time = 10000
+        self.previous_movement = None
+        self.direction = None
+        self.is_blocked = False
+        self.colision_rect = None
 
     def select_initial_position(self, width, height):
         if random.randrange(0, 2) == 0:
@@ -73,58 +79,77 @@ class Zombie(ABC):
     @change_sprite
     def path_move(self, blokers, reset=True):
 
-        if len(self.move_list) > 1:
+        if len(self.move_list) < 2:
+            return
 
-            last_move = (self.sprite.rect.x, self.sprite.rect.y)
-            last_move_center = (self.sprite.rect.centerx, self.sprite.rect.centery)
+        last_move = (self.sprite.rect.x, self.sprite.rect.y)
+        last_move_center = (self.sprite.rect.centerx, self.sprite.rect.centery)
 
-            a: GridNode = self.move_list.pop(0)
-            b: GridNode = self.move_list.pop(0)
+        first_move: GridNode = self.move_list.pop(0)
+        second_move: GridNode = self.move_list.pop(0)
 
-            selected_speed = self.speed
+        self.calculate_direction(first_move, second_move, blokers)
 
-            if a.x != b.x:
-                mov = LEFT
-                if b.x < a.x:
-                    selected_speed = - self.speed
-                    mov = RIGHT
-                self.sprite.x(self.sprite.x() + selected_speed)
-            elif a.y != b.y:
-                mov = DOWN
-                if b.y < a.y:
-                    selected_speed = - self.speed
-                    mov = UP
-                self.sprite.y(self.sprite.y() + selected_speed)
+        self.move_list.insert(0, second_move)
 
-            self.move_list.insert(0, b)
+        block = self.sprite.rect.collidelist(blokers)
+        self.is_blocked = block != -1
 
-            # criteria for right movement
+        if self.is_blocked:
+            print(f" zombie {self.sprite.rect} {blokers[block]}")
 
-            calc_x = lambda x, y, arr: arr[0] == x // 22 and arr[1] == y // 20
+        if self.direction == RIGHT:
+            if self.sprite.rect.x / 22 < second_move.x:
+                self.move_list.insert(0, first_move)
+            else:
+                print(f" {first_move}  {constants.DIRECTIONS_STR.get(self.direction)}")
 
-            if mov == LEFT:
-                if self.sprite.rect.midleft[0] // 22 <= a.x:
-                    self.move_list.insert(0, a)
-                else:
-                    print(f"q wea {a.x} {self.sprite.rect.midleft[0] // 22}")
 
-                block = self.sprite.rect.collidelist(blokers)
-                if block != -1:
-                    var_block = blokers[block]
-                    print(f"{block} || {var_block}")
+        elif self.direction == LEFT:
+            if (self.sprite.rect.right / 22 > first_move.x):
+                self.move_list.insert(0, first_move)
 
-            elif mov == RIGHT:
-                if (self.sprite.rect.midright[0] // 22 >= a.x):
-                    self.move_list.insert(0, a)
-                else:
-                    print(f"q wea {a.x} {self.sprite.rect.midleft[0] // 22}")
+        # criteria for down movement
+        if self.direction == DOWN:
+            if self.sprite.rect.bottom / 20 < second_move.y:
+                self.move_list.insert(0, first_move)
 
-            elif mov == DOWN:
-                if self.sprite.rect.centery // 20 <= a.y:
-                    self.move_list.insert(0, a)
-            elif mov == UP:
-                if self.sprite.rect.centery // 20 >= a.y:
-                    self.move_list.insert(0, a)
+        elif self.direction == UP:
+            if self.sprite.rect.y / 20 > second_move.y:
+                self.move_list.insert(0, first_move)
+
+    def calculate_direction(self, first_move: GridNode, second_move: GridNode, blockers):
+        selected_speed = self.speed
+
+        if second_move.x != first_move.x:
+            if second_move.x < first_move.x:
+                selected_speed = - self.speed
+                self.direction = LEFT
+            else:
+                self.direction = RIGHT
+
+            self.sprite.x(self.sprite.x() + selected_speed)
+
+        elif second_move.y != first_move.y:
+
+            if second_move.y < first_move.y:
+                selected_speed = - self.speed
+                self.direction = UP
+            else:
+                self.direction = DOWN
+            self.sprite.y(self.sprite.y() + selected_speed)
+
+    def predict_move(self):
+        pass
+
+    def check_colision(self):
+        pass
+
+    def handle_collision(self):
+        pass
+
+    def update_movement_list(self):
+        pass
 
     def last_move_strategy(self):
         previous_move = self.last_movements.pop()
@@ -164,6 +189,9 @@ class Zombie(ABC):
 
     def is_death_animation_complete(self):
         return self.death_sprite.sequence == self.death_sprite.current_image + 1
+
+    def get_pos_formatted(self):
+        return f"({self.sprite.rect.x / 22},{self.sprite.rect.y / 20}) "
 
 
 class NormalZombie(Zombie):
@@ -223,4 +251,4 @@ class ZombieFactory:
     @staticmethod
     def generate():
         #   return ZombieFactory.strategy[random.randrange(0, len(ZombieFactory.strategy))]()
-        return ZombieFactory.strategy[2]()
+        return ZombieFactory.strategy[1]()

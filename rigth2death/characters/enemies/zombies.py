@@ -111,12 +111,14 @@ class Zombie(ABC):
 
         # criteria for down movement
         if self.direction == DOWN:
-            if self.sprite.rect.bottom / 20 < second_move.y:
+            if self.sprite.rect.centery / 20 < second_move.y:
                 self.move_list.insert(0, first_move)
 
         elif self.direction == UP:
-            if self.sprite.rect.y / 20 > second_move.y:
+            if self.sprite.rect.centery / 20 > second_move.y:
                 self.move_list.insert(0, first_move)
+            else:
+                print(f" {first_move.x},{first_move.y} {second_move.x},{second_move.y} {self.sprite.rect.y / 20} ")
 
     def calculate_direction(self, first_move: GridNode, second_move: GridNode, blockers):
         selected_speed = self.speed
@@ -127,6 +129,12 @@ class Zombie(ABC):
                 self.direction = LEFT
             else:
                 self.direction = RIGHT
+
+            block = self.sprite.rect.collidelist(blockers)
+            is_blocked = block != -1
+            if is_blocked:
+                print(f"I am currently block")
+
 
             self.sprite.x(self.sprite.x() + selected_speed)
 

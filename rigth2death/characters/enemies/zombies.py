@@ -1,4 +1,5 @@
 import enum
+import logging
 import random
 from abc import ABC
 
@@ -96,14 +97,13 @@ class Zombie(ABC):
         self.is_blocked = block != -1
 
         if self.is_blocked:
-            print(f" zombie {self.sprite.rect} {blokers[block]}")
+            logging.debug(f" zombie {self.sprite.rect} {blokers[block]}")
 
         if self.direction == RIGHT:
             if self.sprite.rect.x / 22 < second_move.x:
                 self.move_list.insert(0, first_move)
             else:
-                print(f" {first_move}  {constants.DIRECTIONS_STR.get(self.direction)}")
-
+                logging.debug(f" {first_move}  {constants.DIRECTIONS_STR.get(self.direction)}")
 
         elif self.direction == LEFT:
             if (self.sprite.rect.right / 22 > first_move.x):
@@ -118,7 +118,7 @@ class Zombie(ABC):
             if self.sprite.rect.centery / 20 > second_move.y:
                 self.move_list.insert(0, first_move)
             else:
-                print(f" {first_move.x},{first_move.y} {second_move.x},{second_move.y} {self.sprite.rect.y / 20} ")
+                logging.debug(f" {first_move.x},{first_move.y} {second_move.x},{second_move.y} {self.sprite.rect.y / 20} ")
 
     def calculate_direction(self, first_move: GridNode, second_move: GridNode, blockers):
         selected_speed = self.speed
@@ -133,8 +133,7 @@ class Zombie(ABC):
             block = self.sprite.rect.collidelist(blockers)
             is_blocked = block != -1
             if is_blocked:
-                print(f"I am currently block")
-
+                logging.debug(f"I am currently block")
 
             self.sprite.x(self.sprite.x() + selected_speed)
 
@@ -258,5 +257,4 @@ class ZombieFactory:
 
     @staticmethod
     def generate():
-        #   return ZombieFactory.strategy[random.randrange(0, len(ZombieFactory.strategy))]()
-        return ZombieFactory.strategy[1]()
+        return ZombieFactory.strategy[random.randrange(0, len(ZombieFactory.strategy))]()

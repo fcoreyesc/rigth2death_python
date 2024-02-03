@@ -1,3 +1,4 @@
+import logging
 import time
 from functools import wraps
 
@@ -20,6 +21,7 @@ from scenarios.elements import LifeSprite
 from utils import constants
 from utils.constants import BGROUND_MUSIC
 from utils.custom_sprite import BlockSprite
+from utils.utils import debug
 
 
 def display_refresh(fps: int):
@@ -85,7 +87,7 @@ class Stage:
         self.player.recover_observer = self.life_sprite.rewind
         self.medikit = MediKit()
 
-        self.zombies = [ZombieFactory.generate() for _ in range(1)]
+        self.zombies = [ZombieFactory.generate() for _ in range(1 if constants.DEBUG_MODE else 10)]
         self.death_zombies: list[Zombie] = []
         self.bullets: list[Bullet] = []
         self.moves = []
@@ -113,19 +115,23 @@ class Stage:
         self.global_time = time.time()
 
         self.click = False
-        self.freeze = False
+        self.freeze = True
 
     def run(self):
         pygame.mixer.music.load(BGROUND_MUSIC)
         pygame.mixer.music.set_volume(0.02)
         pygame.mixer.music.play()
 
-        for zombie in self.zombies:
-            zombie.sprite.rect.x = 387
-            zombie.sprite.rect.y = 263
+        if constants.DEBUG_MODE:
+            for zombie in self.zombies:
+                zombie.sprite.rect.x = 387
+                zombie.sprite.rect.y = 263
+        else:
+            for zombie in self.zombies:
+                zombie.select_initial_position(self.map.width, self.map.height)
 
         while self.running and self.player.is_alive():
-           self.game_loop()
+            self.game_loop()
 
         while self.player.play_death() and self.player.is_dead():
             self.animate_death()
@@ -174,6 +180,7 @@ class Stage:
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 self.mouse_events(event)
 
+    @debug()
     def mouse_events(self, event):
         if event.button == 1:
             self.click = True
@@ -240,9 +247,11 @@ class Stage:
                 x = zombie.sprite.rect.centerx // self.map.tmx_data.tilewidth
                 y = zombie.sprite.rect.centery // self.map.tmx_data.tileheight
 
-                start = self.grid.node(x if x < self.map.tmx_data.width else x - 1,
-                                       y if y < self.map.tmx_data.height else y - 1)
-
+                try:
+                    start = self.grid.node(x if x < self.map.tmx_data.width else self.map.tmx_data.width - 1,
+                                           y if y < self.map.tmx_data.height else self.map.tmx_data.height - 1)
+                except IndexError:
+                    logging.debug("quedo la caga ")
                 paths, runs = self.finder.find_path(start, end, self.grid)
                 zombie.move_list = paths
 
@@ -287,12 +296,13 @@ class Stage:
             self.medikit.select_position(self.map.blockers)
             self.medikit.sprite.play()
 
+    @debug()
     def draw_active_cell(self):
         mouse_pos = pygame.mouse.get_pos()
         rect, gap = self.fixing_position(mouse_pos)
 
         if self.click:
-            print(f' mouse {mouse_pos} -- row col ({gap[3]},{gap[2]}) --  {rect} {self.camera.rectangle}')
+            logging.debug(f' mouse {mouse_pos} -- row col ({gap[3]},{gap[2]}) --  {rect} {self.camera.rectangle}')
             self.click = False
 
         self.screen.blit(self.select_surf2, rect)
@@ -310,6 +320,7 @@ class Stage:
 
         return rect, (gap_y, gap_x, row, col)
 
+    @debug()
     def draw_zombie_path(self, paths: list):
 
         if paths:

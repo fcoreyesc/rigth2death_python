@@ -35,3 +35,5 @@ SPECIAL_BULLET = IMAGES + "characters/weapon/green_shoot.png"
 BGROUND_MUSIC = MUSIC + "audio.mid"
 
 DIRECTIONS_STR = {UP: "UP", DOWN: "DOWN", LEFT: "LEFT", RIGHT: "RIGHT"}
+
+DEBUG_MODE = False

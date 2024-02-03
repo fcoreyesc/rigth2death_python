@@ -1,3 +1,5 @@
+from functools import wraps
+
 import pygame
 
 from utils import constants
@@ -72,3 +74,15 @@ class FixedListAdapter:
 
     def __str__(self):
         return f"max->{self.max} list->{self.list}"
+
+
+def debug():
+    def decorate(funct):
+        @wraps(funct)
+        def wrapper(*args, **kwargs):
+            if constants.DEBUG_MODE:
+                return funct(*args, **kwargs)
+
+        return wrapper
+
+    return decorate

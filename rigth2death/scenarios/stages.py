@@ -7,7 +7,7 @@ import pygame
 import pygame.midi
 from pathfinding.core.grid import Grid
 from pathfinding.finder.a_star import AStarFinder
-from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP, transform
+from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP, transform, K_RIGHT, K_LEFT, K_UP, K_DOWN
 from pygame.sprite import Group
 from pytmx import load_pygame
 
@@ -263,7 +263,18 @@ class Stage:
             if zombie.sprite.collide_with(self.player.get_sprite()):
                 self.player.receive_damage(zombie.power)
 
-            self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
+            player_tuple: tuple = (self.player.get_sprite().rect.x,
+                                   self.player.get_sprite().rect.y,
+                                   self.player.get_sprite().original_height,
+                                   self.player.get_sprite().original_width
+                                   )
+            zombie_tuple: tuple = (zombie.sprite.rect.x, zombie.sprite.rect.y)
+
+            if (self.zombie_is_visible_for_player(player_tuple, zombie_tuple, K_RIGHT)
+                    or self.zombie_is_visible_for_player(player_tuple, zombie_tuple, K_LEFT)
+                    or self.zombie_is_visible_for_player(player_tuple, zombie_tuple, K_UP)
+                    or self.zombie_is_visible_for_player(player_tuple, zombie_tuple, K_DOWN)):
+                self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
 
             for bullet in self.bullets:
                 if zombie.sprite.collide_with(bullet.sprite):
@@ -273,6 +284,16 @@ class Stage:
                     if zombie.is_dead():
                         self.death_zombies.append(zombie)
                         self.zombies.remove(zombie)
+
+    def zombie_is_visible_for_player(self, player: tuple, zombie: tuple, direction: int) -> None:
+        if direction == K_RIGHT:
+            return player[0] <= zombie[0] and abs(player[1] - zombie[1]) < player[2]
+        elif direction == K_LEFT:
+            return player[0] >= zombie[0] and abs(player[1] - zombie[1]) < player[2]
+        elif direction == K_UP:
+            return player[1] >= zombie[1] and abs(player[0] - zombie[0]) < player[3]
+        elif direction == K_DOWN:
+            return player[1] >= zombie[1] and abs(player[0] - zombie[0]) < player[3]
 
     def process_death_zombies(self) -> None:
 

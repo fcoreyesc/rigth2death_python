@@ -5,7 +5,7 @@ from utils.custom_sprite import CustomSprite
 class LifeSprite:
 
     def __init__(self):
-        self.sprite = CustomSprite(utils.img_player_stuffs('life.png'), 11, scale=3, refresh_time=0)
+        self.sprite = CustomSprite(utils.img_stuffs('life.png'), 11, scale=3, refresh_time=0)
         self.sprite.images = self.sprite.images[::-1]
         self.sprite.image = self.sprite.images[0]
 

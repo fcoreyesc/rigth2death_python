@@ -7,7 +7,7 @@ from utils.custom_sprite import CustomSprite
 class MediKit:
 
     def __init__(self):
-        self.sprite = CustomSprite(utils.img_player_stuffs('medikit.png'), scale=1)
+        self.sprite = CustomSprite(utils.img_stuffs('medikit.png'), scale=1)
         self.time = 10
         self.heal = 25
         self.accumulated_time = 0

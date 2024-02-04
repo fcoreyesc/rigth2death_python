@@ -1,19 +1,27 @@
+import logging
+import time
 from functools import wraps
 
+import numpy as np
 import pygame
 import pygame.midi
-from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP, K_RIGHT, K_LEFT
+from pathfinding.core.grid import Grid
+from pathfinding.finder.a_star import AStarFinder
+from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP, transform
 from pygame.sprite import Group
 from pytmx import load_pygame
 
+import utils.utils
 from characters.enemies.zombies import Zombie, ZombieFactory
 from characters.player import Player
 from items.stuff import MediKit
 from items.weapon import Bullet
+from scenarios.Camera import Camera
 from scenarios.elements import LifeSprite
 from utils import constants
 from utils.constants import BGROUND_MUSIC
-from utils.custom_sprite import CustomSprite, BlockSprite
+from utils.custom_sprite import BlockSprite
+from utils.utils import debug
 
 
 def display_refresh(fps: int):
@@ -32,30 +40,6 @@ def display_refresh(fps: int):
     return decorate
 
 
-class Camera:
-    def __init__(self, width, height):
-        self.rectangle = pygame.Rect(0, 0, width, height)
-        self.width = width
-        self.height = height
-
-    def apply(self, entity: CustomSprite):
-        return entity.rect.move(self.rectangle.topleft)
-
-    def apply_rect(self, rect):
-        return rect.move(self.rectangle.topleft)
-
-    def update(self, target):
-        x = -target.rect.centerx + int(constants.WIDTH / 2)
-        y = -target.rect.centery + int(constants.HEIGHT / 2)
-
-        # limit scrolling to map size
-        x = min(0, x)  # left
-        y = min(0, y)  # top
-        x = max(-(self.width - constants.WIDTH), x)  # right
-        y = max(-(self.height - constants.HEIGHT), y)  # bottom
-        self.rectangle = pygame.Rect(x, y, self.width, self.height)
-
-
 class TiledMap:
     def __init__(self, filename):
         tm = load_pygame(filename, pixelalpha=True)
@@ -64,18 +48,23 @@ class TiledMap:
         self.tmx_data = tm
         self.blockers: list[pygame.Rect] = []
         self.mask_sprite_group = Group()
+        self.matrix_representation = np.array([1] * (self.tmx_data.height * self.tmx_data.width)).reshape(
+            self.tmx_data.height, self.tmx_data.width)
 
     def render(self, surface):
         index = 1
         for layer in self.tmx_data.visible_layers:
             for x_position, y_position, img_surface, in layer.tiles():
+
                 tile_width = x_position * self.tmx_data.tilewidth
                 tile_height = y_position * self.tmx_data.tileheight
                 surface.blit(img_surface, (tile_width, tile_height))
                 if "block" in layer.name:
+                    self.matrix_representation[y_position][x_position] = 0
                     self.blockers.append(
                         pygame.Rect(tile_width, tile_height, self.tmx_data.tilewidth, self.tmx_data.tileheight))
                 if "mask" in layer.name:
+                    self.matrix_representation[y_position][x_position] = 0
                     BlockSprite(img_surface, (tile_width, tile_height), self.mask_sprite_group, index)
 
                 index += 1
@@ -98,7 +87,7 @@ class Stage:
         self.player.recover_observer = self.life_sprite.rewind
         self.medikit = MediKit()
 
-        self.zombies = [ZombieFactory.generate() for _ in range(30)]
+        self.zombies = [ZombieFactory.generate() for _ in range(1 if constants.DEBUG_MODE else 10)]
         self.death_zombies: list[Zombie] = []
         self.bullets: list[Bullet] = []
         self.moves = []
@@ -111,13 +100,35 @@ class Stage:
 
         self.font = pygame.font.Font(None, 50)
 
+        self.grid = Grid(matrix=self.map.matrix_representation)
+        self.finder = AStarFinder()
+        self.select_surf = transform.scale(
+            pygame.image.load(utils.utils.img_stuffs('selection.png')).convert_alpha(),
+            (self.map.tmx_data.tilewidth, self.map.tmx_data.tileheight)
+        )
+
+        self.select_surf2 = transform.scale(
+            pygame.image.load(utils.utils.img_stuffs('selection_b.png')).convert_alpha(),
+            (self.map.tmx_data.tilewidth, self.map.tmx_data.tileheight)
+        )
+
+        self.global_time = time.time()
+
+        self.click = False
+        self.freeze = True
+
     def run(self):
         pygame.mixer.music.load(BGROUND_MUSIC)
         pygame.mixer.music.set_volume(0.02)
         pygame.mixer.music.play()
 
-        for zombie in self.zombies:
-            zombie.select_initial_position(self.map.width, self.map.height)
+        if constants.DEBUG_MODE:
+            for zombie in self.zombies:
+                zombie.sprite.rect.x = 387
+                zombie.sprite.rect.y = 263
+        else:
+            for zombie in self.zombies:
+                zombie.select_initial_position(self.map.width, self.map.height)
 
         while self.running and self.player.is_alive():
             self.game_loop()
@@ -133,18 +144,23 @@ class Stage:
 
     @display_refresh(fps=60)
     def game_loop(self):
+
         self.process_user_input()
         self.process_player_moves()
         self.process_player_collisions()
+
         self.move_camera_and_paint_background()
         self.process_medikit()
+
         self.process_death_zombies()
         self.process_zombies()
+
         self.process_shoots()
         self.draw_other_stuffs()
 
     def draw_other_stuffs(self):
         self.screen.blit(self.life_sprite.sprite.image, (constants.WIDTH - self.life_sprite.sprite.original_width, 0))
+        self.draw_active_cell()
 
     def clear_display(self):
         self.screen.fill((0, 0, 0))
@@ -161,6 +177,15 @@ class Stage:
                     self.moves.remove(event.key)
             elif event.type == pygame.QUIT:
                 self.running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                self.mouse_events(event)
+
+    @debug()
+    def mouse_events(self, event):
+        if event.button == 1:
+            self.click = True
+        elif event.button == 3:
+            self.freeze = not self.freeze
 
     def move_camera_and_paint_background(self):
         self.camera.update(self.player.get_sprite())
@@ -213,11 +238,32 @@ class Stage:
     def process_zombies(self) -> None:
 
         for zombie in self.zombies:
-            zombie.move(self.player.get_sprite(), self.map.blockers, self.map.mask_sprite_group)
-            self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
+            if len(zombie.move_list) <= 1:
+                self.global_time = time.time()
+                self.grid.cleanup()
+                end = self.grid.node(self.player.get_sprite().rect.centerx // self.map.tmx_data.tilewidth,
+                                     self.player.get_sprite().rect.centery // self.map.tmx_data.tileheight)
+
+                x = zombie.sprite.rect.centerx // self.map.tmx_data.tilewidth
+                y = zombie.sprite.rect.centery // self.map.tmx_data.tileheight
+
+                try:
+                    start = self.grid.node(x if x < self.map.tmx_data.width else self.map.tmx_data.width - 1,
+                                           y if y < self.map.tmx_data.height else self.map.tmx_data.height - 1)
+                except IndexError:
+                    logging.debug("quedo la caga ")
+                paths, runs = self.finder.find_path(start, end, self.grid)
+                zombie.move_list = paths
+
+            if self.freeze:
+                zombie.path_move(self.map.blockers)
+
+            self.draw_zombie_path(zombie.move_list)
 
             if zombie.sprite.collide_with(self.player.get_sprite()):
                 self.player.receive_damage(zombie.power)
+
+            self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
 
             for bullet in self.bullets:
                 if zombie.sprite.collide_with(bullet.sprite):
@@ -234,6 +280,7 @@ class Stage:
             if zombie.is_death_animation_complete():
                 self.death_zombies.remove(zombie)
                 continue
+
             zombie.play()
             self.screen.blit(zombie.death_sprite.image, self.camera.apply(zombie.death_sprite))
 
@@ -248,3 +295,42 @@ class Stage:
         else:
             self.medikit.select_position(self.map.blockers)
             self.medikit.sprite.play()
+
+    @debug()
+    def draw_active_cell(self):
+        mouse_pos = pygame.mouse.get_pos()
+        rect, gap = self.fixing_position(mouse_pos)
+
+        if self.click:
+            logging.debug(f' mouse {mouse_pos} -- row col ({gap[3]},{gap[2]}) --  {rect} {self.camera.rectangle}')
+            self.click = False
+
+        self.screen.blit(self.select_surf2, rect)
+
+    def fixing_position(self, positions):
+        gap_x = self.camera.rectangle.x % self.map.tmx_data.tilewidth
+        gap_y = self.camera.rectangle.y % self.map.tmx_data.tileheight
+
+        row = (positions[1] - gap_y) // self.map.tmx_data.tileheight
+        col = (positions[0] - gap_x) // self.map.tmx_data.tilewidth
+
+        rect = pygame.Rect(((col * self.map.tmx_data.tilewidth), (row * self.map.tmx_data.tileheight)), (col, row))
+        rect.centerx += gap_x
+        rect.centery += gap_y
+
+        return rect, (gap_y, gap_x, row, col)
+
+    @debug()
+    def draw_zombie_path(self, paths: list):
+
+        if paths:
+            points = []
+            for point in paths:
+                x = ((point.x * self.map.tmx_data.tilewidth) + self.camera.rectangle.x) + (
+                        self.map.tmx_data.tilewidth // 2)
+                y = ((point.y * self.map.tmx_data.tileheight) + self.camera.rectangle.y) + (
+                        self.map.tmx_data.tileheight // 2)
+                points.append((x, y))
+
+            if len(points) > 1:
+                pygame.draw.lines(self.screen, '#ff0000', False, points, 5)

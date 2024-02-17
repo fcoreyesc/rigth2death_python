@@ -78,26 +78,23 @@ class Zombie(ABC):
                 self.selected_strategy = 'basic'
 
     @change_sprite
-    def path_move(self, blokers, reset=True):
+    def path_move(self, blockers, reset=True):
 
         if len(self.move_list) < 2:
             return
 
-        last_move = (self.sprite.rect.x, self.sprite.rect.y)
-        last_move_center = (self.sprite.rect.centerx, self.sprite.rect.centery)
-
         first_move: GridNode = self.move_list.pop(0)
         second_move: GridNode = self.move_list.pop(0)
 
-        self.calculate_direction(first_move, second_move, blokers)
+        self.calculate_direction(first_move, second_move, blockers)
 
         self.move_list.insert(0, second_move)
 
-        block = self.sprite.rect.collidelist(blokers)
+        block = self.sprite.rect.collidelist(blockers)
         self.is_blocked = block != -1
 
         if self.is_blocked:
-            logging.debug(f" zombie {self.sprite.rect} {blokers[block]}")
+            logging.debug(f" zombie {self.sprite.rect} {blockers[block]}")
 
         if self.direction == RIGHT:
             if self.sprite.rect.x / 22 < second_move.x:

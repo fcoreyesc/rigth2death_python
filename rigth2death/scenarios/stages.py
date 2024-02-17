@@ -252,40 +252,42 @@ class Stage:
                                            y if y < self.map.tmx_data.height else self.map.tmx_data.height - 1)
                 except IndexError:
                     logging.debug("quedo la caga ")
-                paths, runs = self.finder.find_path(start, end, self.grid)
+                paths, _ = self.finder.find_path(start, end, self.grid)
                 zombie.move_list = paths
 
             if self.freeze:
                 zombie.path_move(self.map.blockers)
 
             self.draw_zombie_path(zombie.move_list)
+            self.process_player_damage(zombie)
+            self.display_zombie_in_sight(zombie)
+            self.process_zombie_damage(zombie)
 
-            if zombie.sprite.collide_with(self.player.get_sprite()):
-                self.player.receive_damage(zombie.power)
+    def display_zombie_in_sight(self, zombie):
+        player_tuple: tuple = (self.player.get_sprite().rect.x,
+                               self.player.get_sprite().rect.y,
+                               self.player.get_sprite().original_height,
+                               self.player.get_sprite().original_width
+                               )
+        zombie_tuple: tuple = (zombie.sprite.rect.x, zombie.sprite.rect.y)
+        if self.zombie_is_visible_for_player(player_tuple, zombie_tuple, self.player.current_k_sprite):
+            self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
 
-            player_tuple: tuple = (self.player.get_sprite().rect.x,
-                                   self.player.get_sprite().rect.y,
-                                   self.player.get_sprite().original_height,
-                                   self.player.get_sprite().original_width
-                                   )
-            zombie_tuple: tuple = (zombie.sprite.rect.x, zombie.sprite.rect.y)
+    def process_player_damage(self, zombie):
+        if zombie.sprite.collide_with(self.player.get_sprite()):
+            self.player.receive_damage(zombie.power)
 
-            if (self.zombie_is_visible_for_player(player_tuple, zombie_tuple, K_RIGHT)
-                    or self.zombie_is_visible_for_player(player_tuple, zombie_tuple, K_LEFT)
-                    or self.zombie_is_visible_for_player(player_tuple, zombie_tuple, K_UP)
-                    or self.zombie_is_visible_for_player(player_tuple, zombie_tuple, K_DOWN)):
-                self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
+    def process_zombie_damage(self, zombie):
+        for bullet in self.bullets:
+            if zombie.sprite.collide_with(bullet.sprite):
+                zombie.add_damage(bullet.power)
+                bullet.destroy()
+                self.bullets.remove(bullet)
+                if zombie.is_dead():
+                    self.death_zombies.append(zombie)
+                    self.zombies.remove(zombie)
 
-            for bullet in self.bullets:
-                if zombie.sprite.collide_with(bullet.sprite):
-                    zombie.add_damage(bullet.power)
-                    bullet.destroy()
-                    self.bullets.remove(bullet)
-                    if zombie.is_dead():
-                        self.death_zombies.append(zombie)
-                        self.zombies.remove(zombie)
-
-    def zombie_is_visible_for_player(self, player: tuple, zombie: tuple, direction: int) -> None:
+    def zombie_is_visible_for_player(self, player: tuple, zombie: tuple, direction: int) -> bool:
         if direction == K_RIGHT:
             return player[0] <= zombie[0] and abs(player[1] - zombie[1]) < player[2]
         elif direction == K_LEFT:

@@ -7,7 +7,7 @@ import pygame
 import pygame.midi
 from pathfinding.core.grid import Grid
 from pathfinding.finder.a_star import AStarFinder
-from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP, transform, K_RIGHT, K_LEFT, K_UP, K_DOWN
+from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP, transform, K_RIGHT, K_LEFT, K_UP, K_DOWN, K_LCTRL, K_SPACE
 from pygame.sprite import Group
 from pytmx import load_pygame
 
@@ -77,14 +77,13 @@ class TiledMap:
 
 class Stage:
 
-    def __init__(self, allowed_moves):
+    def __init__(self, allowed_moves=(K_LEFT, K_RIGHT, K_UP, K_DOWN, K_SPACE, K_LCTRL)):
 
         self.screen: Surface = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
         self.map = TiledMap(constants.MAPS + "mapa_z.tmx")
         self.life_sprite: LifeSprite = LifeSprite()
-        self.player: Player = Player()
-        self.player.damage_observer = self.life_sprite.play
-        self.player.recover_observer = self.life_sprite.rewind
+        self.player: Player = Player(self.life_sprite.play, self.life_sprite.rewind)
+
         self.medikit = MediKit()
 
         self.zombies = [ZombieFactory.generate() for _ in range(1 if constants.DEBUG_MODE else 10)]

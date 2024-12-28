@@ -30,6 +30,14 @@ def get_image_frames_y(width, height, image, frames):
     return images
 
 
+def get_background(name: str) -> str:
+    return constants.BACKGROUNDS + '{}'.format(name)
+
+
+def get_font(name: str) -> str:
+    return constants.FONTS + '{}'.format(name)
+
+
 def img(name):
     return constants.IMAGES + 'characters/zombies/{}'.format(name)
 

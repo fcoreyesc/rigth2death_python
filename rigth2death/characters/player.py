@@ -94,7 +94,7 @@ class Player:
             self.death_sprite.x(self.selected_sprite.x())
             self.death_sprite.y(self.selected_sprite.y())
 
-    def recover(self, health_points: int):
+    def recover(self, health_points: int) -> None:
         if self.health.is_life_full():
             return
 

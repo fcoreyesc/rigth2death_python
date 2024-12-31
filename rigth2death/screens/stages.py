@@ -2,25 +2,22 @@ import logging
 import time
 from functools import wraps
 
-import numpy as np
 import pygame
 import pygame.midi
 from pathfinding.core.grid import Grid
 from pathfinding.finder.a_star import AStarFinder
 from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP, transform, K_RIGHT, K_LEFT, K_UP, K_DOWN, K_LCTRL, K_SPACE
-from pygame.sprite import Group
-from pytmx import load_pygame
 
 import utils.utils
-from characters.enemies.zombies import Zombie, ZombieFactory
+from characters.enemies.zombies import Zombie, ZombieFactory, BossZombie
 from characters.player import Player
 from items.stuff import MediKit
 from items.weapon import Bullet
 from scenarios.Camera import Camera
 from scenarios.elements import LifeSprite
+from screens.TilesMap import TiledMap
 from utils import constants
 from utils.constants import BGROUND_MUSIC
-from utils.custom_sprite import BlockSprite
 from utils.utils import debug
 
 
@@ -40,53 +37,20 @@ def display_refresh(fps: int):
     return decorate
 
 
-class TiledMap:
-    def __init__(self, filename):
-        tm = load_pygame(filename, pixelalpha=True)
-        self.width = tm.width * tm.tilewidth
-        self.height = tm.height * tm.tileheight
-        self.tmx_data = tm
-        self.blockers: list[pygame.Rect] = []
-        self.mask_sprite_group = Group()
-        self.matrix_representation = np.array([1] * (self.tmx_data.height * self.tmx_data.width)).reshape(
-            self.tmx_data.height, self.tmx_data.width)
-
-    def render(self, surface):
-        index = 1
-        for layer in self.tmx_data.visible_layers:
-            for x_position, y_position, img_surface, in layer.tiles():
-
-                tile_width = x_position * self.tmx_data.tilewidth
-                tile_height = y_position * self.tmx_data.tileheight
-                surface.blit(img_surface, (tile_width, tile_height))
-                if "block" in layer.name:
-                    self.matrix_representation[y_position][x_position] = 0
-                    self.blockers.append(
-                        pygame.Rect(tile_width, tile_height, self.tmx_data.tilewidth, self.tmx_data.tileheight))
-                if "mask" in layer.name:
-                    self.matrix_representation[y_position][x_position] = 0
-                    BlockSprite(img_surface, (tile_width, tile_height), self.mask_sprite_group, index)
-
-                index += 1
-
-    def build_map(self):
-        temp_surface = pygame.Surface((self.width, self.height))
-        self.render(temp_surface)
-        return temp_surface
-
-
 class Stage:
 
     def __init__(self, allowed_moves=(K_LEFT, K_RIGHT, K_UP, K_DOWN, K_SPACE, K_LCTRL)):
 
         self.screen: Surface = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
-        self.map = TiledMap(constants.MAPS + "mapa_z.tmx")
+        self.map = TiledMap(constants.MAPS + "boss_stage.tmx")
         self.life_sprite: LifeSprite = LifeSprite()
         self.player: Player = Player(self.life_sprite.play, self.life_sprite.rewind)
 
         self.medikit = MediKit()
 
-        self.zombies = [ZombieFactory.generate() for _ in range(1 if constants.DEBUG_MODE else 10)]
+        # self.zombies = [ZombieFactory.generate() for _ in range(1 if constants.DEBUG_MODE else 10)]
+        self.zombies = []
+        self.zombies.append(BossZombie())
         self.death_zombies: list[Zombie] = []
         self.bullets: list[Bullet] = []
         self.moves = []
@@ -114,7 +78,7 @@ class Stage:
         self.global_time = time.time()
 
         self.click = False
-        self.freeze = True
+        self.freeze = False
 
     def run(self):
         pygame.mixer.music.load(BGROUND_MUSIC)
@@ -125,6 +89,7 @@ class Stage:
             for zombie in self.zombies:
                 zombie.sprite.rect.x = 387
                 zombie.sprite.rect.y = 263
+                zombie.update_sprite_parts_position()
         else:
             for zombie in self.zombies:
                 zombie.select_initial_position(self.map.width, self.map.height)
@@ -259,10 +224,10 @@ class Stage:
 
             self.draw_zombie_path(zombie.move_list)
             self.process_player_damage(zombie)
-            self.display_zombie_in_sight(zombie)
+            self.display_zombie_in_view(zombie)
             self.process_zombie_damage(zombie)
 
-    def display_zombie_in_sight(self, zombie):
+    def display_zombie_in_view(self, zombie):
         player_tuple: tuple = (self.player.get_sprite().rect.x,
                                self.player.get_sprite().rect.y,
                                self.player.get_sprite().original_height,
@@ -270,7 +235,11 @@ class Stage:
                                )
         zombie_tuple: tuple = (zombie.sprite.rect.x, zombie.sprite.rect.y)
         if self.zombie_is_visible_for_player(player_tuple, zombie_tuple, self.player.current_k_sprite):
+            if zombie.sprite_parts is not None:
+                for sprite_part in zombie.sprite_parts:
+                    self.screen.blit(sprite_part.sprite.image, self.camera.apply(sprite_part.sprite))
             self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
+
 
     def process_player_damage(self, zombie):
         if zombie.sprite.collide_with(self.player.get_sprite()):
@@ -287,14 +256,15 @@ class Stage:
                     self.zombies.remove(zombie)
 
     def zombie_is_visible_for_player(self, player: tuple, zombie: tuple, direction: int) -> bool:
-        if direction == K_RIGHT:
-            return player[0] <= zombie[0] and abs(player[1] - zombie[1]) < player[2]
-        elif direction == K_LEFT:
-            return player[0] >= zombie[0] and abs(player[1] - zombie[1]) < player[2]
-        elif direction == K_UP:
-            return player[1] >= zombie[1] and abs(player[0] - zombie[0]) < player[3]
-        elif direction == K_DOWN:
-            return player[1] >= zombie[1] and abs(player[0] - zombie[0]) < player[3]
+        # if direction == K_RIGHT:
+        #     return player[0] <= zombie[0] and abs(player[1] - zombie[1]) < player[2]
+        # elif direction == K_LEFT:
+        #     return player[0] >= zombie[0] and abs(player[1] - zombie[1]) < player[2]
+        # elif direction == K_UP:
+        #     return player[1] >= zombie[1] and abs(player[0] - zombie[0]) < player[3]
+        # elif direction == K_DOWN:
+        #     return player[1] >= zombie[1] and abs(player[0] - zombie[0]) < player[3]
+        return True
 
     def process_death_zombies(self) -> None:
 

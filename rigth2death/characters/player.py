@@ -23,7 +23,7 @@ class Player:
 
         self.current_k_sprite = K_RIGHT
         self.selected_sprite = self.movement_sprites.get(self.current_k_sprite)
-        self.selected_sprite.move(520, 345)
+        self.selected_sprite.move(390, 767)
         self.speed = 4
         self.health: Health = Health()
         self.no_damage_timer = 100

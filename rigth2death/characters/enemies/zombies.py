@@ -52,8 +52,7 @@ class Zombie(ABC):
     def update_sprite_parts_position(self):
         if (self.sprite_parts is not None):
             for sprite_part in self.sprite_parts:
-                sprite_part.sprite.x(self.sprite.x()+40)
-                sprite_part.sprite.y(self.sprite.y()+55 )
+                sprite_part.update_position(self.sprite.x(), self.sprite.y())
 
     def change_sprite(func):
         def wrapper(*args, **kwargs):
@@ -254,12 +253,19 @@ class AquaZombie(Zombie):
 
 class BossZombiePart():
 
-    def __init__(self):
+    def __init__(self, file_name: str, frames: int, scale: int, is_vertical: bool, refresh_time: int, offset_x=0,
+                 offset_y=0):
+        self.offset_x = offset_x
+        self.offset_y = offset_y
         self.movement_sprites = {
-            SpritesEnum.LEFT: CustomSprite(utils.img('boss_base.png'), 6, scale=1.5, is_vertical=True,
-                                           refresh_time=150)
+            SpritesEnum.LEFT: CustomSprite(utils.img(file_name), frames=frames, is_vertical=is_vertical, scale=scale,
+                                           refresh_time=refresh_time),
         }
         self.sprite = self.movement_sprites.get(SpritesEnum.LEFT)
+
+    def update_position(self, x, y):
+        self.sprite.x(x + self.offset_x)
+        self.sprite.y(y + self.offset_y)
 
 
 class BossZombie(Zombie):
@@ -277,7 +283,34 @@ class BossZombie(Zombie):
                                             refresh_time=150)
         }
         self.sprite = self.movement_sprites.get(SpritesEnum.LEFT)
-        self.sprite_parts.append(BossZombiePart())
+        self.sprite_parts.append(
+            BossZombiePart(file_name="boss_base.png",
+                           frames=6,
+                           scale=1.5,
+                           is_vertical=True,
+                           refresh_time=150,
+                           offset_x=40,
+                           offset_y=55)
+        )
+        self.sprite_parts.append(
+            BossZombiePart(file_name="boss_left_hand.png",
+                           frames=5,
+                           scale=1.5,
+                           is_vertical=False,
+                           refresh_time=150,
+                           offset_x=-5,
+                           offset_y=55)
+        )
+        self.sprite_parts.append(
+            BossZombiePart(file_name="boss_right_hand.png",
+                           frames=5,
+                           scale=1.5,
+                           is_vertical=False,
+                           refresh_time=150,
+                           offset_x=100,
+                           offset_y=55)
+
+        )
 
 
 class ZombieFactory:

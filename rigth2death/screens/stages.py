@@ -9,15 +9,16 @@ from pathfinding.finder.a_star import AStarFinder
 from pygame import Surface, KEYDOWN, K_ESCAPE, KEYUP, transform, K_RIGHT, K_LEFT, K_UP, K_DOWN, K_LCTRL, K_SPACE
 
 import utils.utils
-from characters.enemies.zombies import Zombie, ZombieFactory, BossZombie
+from characters.enemies.zombies import Zombie, BossZombie
 from characters.player import Player
 from items.stuff import MediKit
 from items.weapon import Bullet
+from resources.music import MusicManager
 from scenarios.Camera import Camera
 from scenarios.elements import LifeSprite
 from screens.TilesMap import TiledMap
 from utils import constants
-from utils.constants import BGROUND_MUSIC
+from utils.custom_sprite import CustomSprite
 from utils.utils import debug
 
 
@@ -26,7 +27,7 @@ def display_refresh(fps: int):
         @wraps(funct)
         def wrapper(*args, **kwargs):
             this = args[0]
-            this.screen.fill((0, 0, 0))
+            this.stageUi.get_screen().fill((0, 0, 0))
             result = funct(*args, **kwargs)
             pygame.display.update()
             this.clock.tick(fps)
@@ -37,12 +38,49 @@ def display_refresh(fps: int):
     return decorate
 
 
+class StageUI:
+    def __init__(self, map_var: TiledMap):
+        self.map: TiledMap = map_var
+        self.screen = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
+        self.font = pygame.font.Font(None, 36)
+        self.camera = Camera(self.map.width, self.map.height)
+
+    def get_camera(self) -> Camera:
+        return self.camera
+
+    def get_screen(self) -> Surface:
+        return self.screen
+
+    def draw_other_stuffs(self, life_sprite: LifeSprite):
+        self.screen.blit(life_sprite.sprite.image, (constants.WIDTH - life_sprite.sprite.original_width, 0))
+
+    #        self.draw_active_cell()
+
+    def clear_display(self):
+        self.screen.fill((0, 0, 0))
+
+    @display_refresh(fps=30)
+    def animate_death(self):
+        self.screen.blit(self.player.get_image(), self.camera.apply(self.player.get_sprite()))
+
+    def move_camera_and_paint_background(self, player: Player, image_map: Surface):
+        self.camera.update(player.get_sprite())
+        self.screen.blit(image_map, self.camera.apply_rect(image_map.get_rect()))
+        self.screen.blit(player.get_image(), self.camera.apply(player.get_sprite()))
+
+    def draw_sprite(self, sprite: CustomSprite) -> None:
+        self.screen.blit(sprite.get_image(), self.camera.apply(sprite))
+
+    def draw_element(self, surface: Surface, rect: pygame.Rect) -> None:
+        self.screen.blit(surface, rect)
+
+
 class Stage:
 
     def __init__(self, allowed_moves=(K_LEFT, K_RIGHT, K_UP, K_DOWN, K_SPACE, K_LCTRL)):
 
-        self.screen: Surface = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
         self.map = TiledMap(constants.MAPS + "boss_stage.tmx")
+        self.stageUi: StageUI = StageUI(self.map)
         self.life_sprite: LifeSprite = LifeSprite()
         self.player: Player = Player(self.life_sprite.play, self.life_sprite.rewind)
 
@@ -56,21 +94,18 @@ class Stage:
         self.moves = []
         self.allowed_moves = allowed_moves
         self.running = True
-        self.camera = Camera(self.map.width, self.map.height)
-        self.image_map = self.map.build_map()
-        self.stage_rect = self.image_map.get_rect()
-        self.clock = pygame.time.Clock()
 
-        self.font = pygame.font.Font(None, 50)
+        self.image_map = self.map.build_map()
+        self.clock = pygame.time.Clock()
 
         self.grid = Grid(matrix=self.map.matrix_representation)
         self.finder = AStarFinder()
-        self.select_surf = transform.scale(
+        self.select_surf: Surface = transform.scale(
             pygame.image.load(utils.utils.img_stuffs('selection.png')).convert_alpha(),
             (self.map.tmx_data.tilewidth, self.map.tmx_data.tileheight)
         )
 
-        self.select_surf2 = transform.scale(
+        self.select_surf2: Surface = transform.scale(
             pygame.image.load(utils.utils.img_stuffs('selection_b.png')).convert_alpha(),
             (self.map.tmx_data.tilewidth, self.map.tmx_data.tileheight)
         )
@@ -81,9 +116,7 @@ class Stage:
         self.freeze = False
 
     def run(self):
-        pygame.mixer.music.load(BGROUND_MUSIC)
-        pygame.mixer.music.set_volume(0.02)
-        pygame.mixer.music.play()
+        MusicManager.play()
 
         if constants.DEBUG_MODE:
             for zombie in self.zombies:
@@ -98,13 +131,9 @@ class Stage:
             self.game_loop()
 
         while self.player.play_death() and self.player.is_dead():
-            self.animate_death()
+            self.stageUi.animate_death()
 
-        pygame.mixer.music.stop()
-
-    @display_refresh(fps=30)
-    def animate_death(self):
-        self.screen.blit(self.player.get_image(), self.camera.apply(self.player.get_sprite()))
+        MusicManager.stop()
 
     @display_refresh(fps=60)
     def game_loop(self):
@@ -113,21 +142,14 @@ class Stage:
         self.process_player_moves()
         self.process_player_collisions()
 
-        self.move_camera_and_paint_background()
+        self.stageUi.move_camera_and_paint_background(self.player, self.image_map)
         self.process_medikit()
 
         self.process_death_zombies()
         self.process_zombies()
 
         self.process_shoots()
-        self.draw_other_stuffs()
-
-    def draw_other_stuffs(self):
-        self.screen.blit(self.life_sprite.sprite.image, (constants.WIDTH - self.life_sprite.sprite.original_width, 0))
-        self.draw_active_cell()
-
-    def clear_display(self):
-        self.screen.fill((0, 0, 0))
+        self.stageUi.draw_other_stuffs(self.life_sprite)
 
     def process_user_input(self):
         for event in pygame.event.get():
@@ -150,11 +172,6 @@ class Stage:
             self.click = True
         elif event.button == 3:
             self.freeze = not self.freeze
-
-    def move_camera_and_paint_background(self):
-        self.camera.update(self.player.get_sprite())
-        self.screen.blit(self.image_map, self.camera.apply_rect(self.stage_rect))
-        self.screen.blit(self.player.get_image(), self.camera.apply(self.player.get_sprite()))
 
     def process_player_moves(self):
         if len(self.moves) > 0:
@@ -191,7 +208,7 @@ class Stage:
         for bullet in self.bullets:
             if bullet.exist():
                 bullet.move()
-                self.screen.blit(bullet.sprite.image, self.camera.apply(bullet.sprite))
+                self.stageUi.draw_sprite(bullet.sprite)
 
                 if bullet.sprite.rect.collidelist(self.map.blockers) != -1 or pygame.sprite.spritecollideany(
                         bullet.sprite, self.map.mask_sprite_group):
@@ -237,9 +254,8 @@ class Stage:
         if self.zombie_is_visible_for_player(player_tuple, zombie_tuple, self.player.current_k_sprite):
             if zombie.sprite_parts is not None:
                 for sprite_part in zombie.sprite_parts:
-                    self.screen.blit(sprite_part.sprite.image, self.camera.apply(sprite_part.sprite))
-            self.screen.blit(zombie.sprite.image, self.camera.apply(zombie.sprite))
-
+                    self.stageUi.draw_sprite(sprite_part.sprite)
+            self.stageUi.draw_sprite(zombie.sprite)
 
     def process_player_damage(self, zombie):
         if zombie.sprite.collide_with(self.player.get_sprite()):
@@ -274,12 +290,12 @@ class Stage:
                 continue
 
             zombie.play()
-            self.screen.blit(zombie.death_sprite.image, self.camera.apply(zombie.death_sprite))
+            self.stageUi.draw_sprite(zombie.death_sprite)
 
     def process_medikit(self):
 
         if self.medikit.is_visible:
-            self.screen.blit(self.medikit.sprite.image, self.camera.apply(self.medikit.sprite))
+            self.stageUi.draw_sprite(self.medikit.sprite)
             if self.medikit.sprite.collide_with(self.player.selected_sprite):
                 self.player.recover(self.medikit.heal)
                 self.medikit.hide()
@@ -294,19 +310,21 @@ class Stage:
         rect, gap = self.fixing_position(mouse_pos)
 
         if self.click:
-            logging.debug(f' mouse {mouse_pos} -- row col ({gap[3]},{gap[2]}) --  {rect} {self.camera.rectangle}')
+            logging.debug(
+                f' mouse {mouse_pos} -- row col ({gap[3]},{gap[2]}) --  {rect} {self.stageUi.get_camera().rectangle}')
             self.click = False
 
-        self.screen.blit(self.select_surf2, rect)
+        self.stageUi.draw_element(self.select_surf2, rect)
 
     def fixing_position(self, positions):
-        gap_x = self.camera.rectangle.x % self.map.tmx_data.tilewidth
-        gap_y = self.camera.rectangle.y % self.map.tmx_data.tileheight
+        gap_x = self.stageUi.get_camera().rectangle.x % self.map.tmx_data.tilewidth
+        gap_y = self.stageUi.get_camera().rectangle.y % self.map.tmx_data.tileheight
 
         row = (positions[1] - gap_y) // self.map.tmx_data.tileheight
         col = (positions[0] - gap_x) // self.map.tmx_data.tilewidth
 
-        rect = pygame.Rect(((col * self.map.tmx_data.tilewidth), (row * self.map.tmx_data.tileheight)), (col, row))
+        rect: pygame.Rect = pygame.Rect(((col * self.map.tmx_data.tilewidth), (row * self.map.tmx_data.tileheight)),
+                                        (col, row))
         rect.centerx += gap_x
         rect.centery += gap_y
 
@@ -318,11 +336,11 @@ class Stage:
         if paths:
             points = []
             for point in paths:
-                x = ((point.x * self.map.tmx_data.tilewidth) + self.camera.rectangle.x) + (
+                x = ((point.x * self.map.tmx_data.tilewidth) + self.stageUi.get_camera().rectangle.x) + (
                         self.map.tmx_data.tilewidth // 2)
-                y = ((point.y * self.map.tmx_data.tileheight) + self.camera.rectangle.y) + (
+                y = ((point.y * self.map.tmx_data.tileheight) + self.stageUi.get_camera().rectangle.y) + (
                         self.map.tmx_data.tileheight // 2)
                 points.append((x, y))
 
             if len(points) > 1:
-                pygame.draw.lines(self.screen, '#ff0000', False, points, 5)
+                pygame.draw.lines(self.stageUi.get_screen(), '#ff0000', False, points, 5)

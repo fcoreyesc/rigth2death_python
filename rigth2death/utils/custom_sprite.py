@@ -57,6 +57,10 @@ class CustomSprite(pygame.sprite.Sprite):
         self.rect.x = xpos
         self.rect.y = ypos
 
+    def move_to_sprite(self, source_sprite: 'CustomSprite'):
+        self.rect.x = source_sprite.x()
+        self.rect.y = source_sprite.y()
+
     def play(self):
         refresh_time = int(round(time.time() * 1000)) - self.sum_refresh
 
@@ -120,6 +124,9 @@ class CustomSprite(pygame.sprite.Sprite):
 
     def get_mask(self) -> pygame.mask.Mask:
         return pygame.mask.from_surface(self.image)
+
+    def get_image(self) -> pygame.Surface:
+        return self.image
 
 
 def load_image(file_name):

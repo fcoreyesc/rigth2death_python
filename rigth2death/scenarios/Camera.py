@@ -6,19 +6,19 @@ from utils.custom_sprite import CustomSprite
 
 class Camera:
     def __init__(self, width, height):
-        self.rectangle = pygame.Rect(0, 0, width, height)
-        self.width = width
-        self.height = height
+        self.rectangle: pygame.Rect = pygame.Rect(0, 0, width, height)
+        self.width: int = width
+        self.height: int = height
 
-    def apply(self, entity: CustomSprite):
+    def apply(self, entity: CustomSprite) -> pygame.Rect:
         return entity.rect.move(self.rectangle.topleft)
 
-    def apply_rect(self, rect):
+    def apply_rect(self, rect: pygame.Rect) -> pygame.Rect:
         return rect.move(self.rectangle.topleft)
 
-    def update(self, target):
-        x = -target.rect.centerx + int(self.get_calculated_width() / 2)
-        y = -target.rect.centery + int(self.get_calculated_height() / 2)
+    def update(self, rect: pygame.Rect):
+        x = -rect.centerx + int(self.get_calculated_width() / 2)
+        y = -rect.centery + int(self.get_calculated_height() / 2)
 
         # limit scrolling to map size
         x = min(0, x)  # left

@@ -40,10 +40,9 @@ def display_refresh(fps: int):
 
 class StageUI:
     def __init__(self, map_var: TiledMap):
-        self.map: TiledMap = map_var
         self.screen = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
         self.font = pygame.font.Font(None, 36)
-        self.camera = Camera(self.map.width, self.map.height)
+        self.camera = Camera(map_var.width, map_var.height)
 
     def get_camera(self) -> Camera:
         return self.camera
@@ -59,12 +58,11 @@ class StageUI:
     def clear_display(self):
         self.screen.fill((0, 0, 0))
 
-    @display_refresh(fps=30)
-    def animate_death(self):
-        self.screen.blit(self.player.get_image(), self.camera.apply(self.player.get_sprite()))
+    def animate_death(self, player: Player):
+        self.screen.blit(player.get_image(), self.camera.apply(player.get_sprite()))
 
     def move_camera_and_paint_background(self, player: Player, image_map: Surface):
-        self.camera.update(player.get_sprite())
+        self.camera.update(player.get_sprite().get_rect())
         self.screen.blit(image_map, self.camera.apply_rect(image_map.get_rect()))
         self.screen.blit(player.get_image(), self.camera.apply(player.get_sprite()))
 
@@ -75,19 +73,25 @@ class StageUI:
         self.screen.blit(surface, rect)
 
 
+class EnemyBehaviour:
+    def __init__(self):
+        pass
+
+
 class Stage:
 
     def __init__(self, allowed_moves=(K_LEFT, K_RIGHT, K_UP, K_DOWN, K_SPACE, K_LCTRL)):
 
         self.map = TiledMap(constants.MAPS + "boss_stage.tmx")
         self.stageUi: StageUI = StageUI(self.map)
+        self.stageController: EnemyBehaviour = EnemyBehaviour()
         self.life_sprite: LifeSprite = LifeSprite()
         self.player: Player = Player(self.life_sprite.play, self.life_sprite.rewind)
 
         self.medikit = MediKit()
 
         # self.zombies = [ZombieFactory.generate() for _ in range(1 if constants.DEBUG_MODE else 10)]
-        self.zombies = []
+        self.zombies: list[Zombie] = []
         self.zombies.append(BossZombie())
         self.death_zombies: list[Zombie] = []
         self.bullets: list[Bullet] = []
@@ -120,9 +124,7 @@ class Stage:
 
         if constants.DEBUG_MODE:
             for zombie in self.zombies:
-                zombie.sprite.rect.x = 387
-                zombie.sprite.rect.y = 263
-                zombie.update_sprite_parts_position()
+                zombie.set_position(387, 263)
         else:
             for zombie in self.zombies:
                 zombie.select_initial_position(self.map.width, self.map.height)
@@ -131,9 +133,13 @@ class Stage:
             self.game_loop()
 
         while self.player.play_death() and self.player.is_dead():
-            self.stageUi.animate_death()
+            self.animate_end_game()
 
         MusicManager.stop()
+
+    @display_refresh(fps=30)
+    def animate_end_game(self):
+        self.stageUi.animate_death(self.player)
 
     @display_refresh(fps=60)
     def game_loop(self):
@@ -208,7 +214,7 @@ class Stage:
         for bullet in self.bullets:
             if bullet.exist():
                 bullet.move()
-                self.stageUi.draw_sprite(bullet.sprite)
+                self.draw_sprite(bullet.sprite)
 
                 if bullet.sprite.rect.collidelist(self.map.blockers) != -1 or pygame.sprite.spritecollideany(
                         bullet.sprite, self.map.mask_sprite_group):
@@ -254,16 +260,19 @@ class Stage:
         if self.zombie_is_visible_for_player(player_tuple, zombie_tuple, self.player.current_k_sprite):
             if zombie.sprite_parts is not None:
                 for sprite_part in zombie.sprite_parts:
-                    self.stageUi.draw_sprite(sprite_part.sprite)
-            self.stageUi.draw_sprite(zombie.sprite)
+                    self.draw_sprite(sprite_part.sprite)
+            self.draw_sprite(zombie.sprite)
 
-    def process_player_damage(self, zombie):
+    def draw_sprite(self, sprite: CustomSprite) -> None:
+        self.stageUi.draw_sprite(sprite)
+
+    def process_player_damage(self, zombie: Zombie):
         if zombie.sprite.collide_with(self.player.get_sprite()):
             self.player.receive_damage(zombie.power)
 
-    def process_zombie_damage(self, zombie):
+    def process_zombie_damage(self, zombie: Zombie):
         for bullet in self.bullets:
-            if zombie.sprite.collide_with(bullet.sprite):
+            if zombie.check_collision(bullet.sprite):
                 zombie.add_damage(bullet.power)
                 bullet.destroy()
                 self.bullets.remove(bullet)
@@ -290,12 +299,12 @@ class Stage:
                 continue
 
             zombie.play()
-            self.stageUi.draw_sprite(zombie.death_sprite)
+            self.stageUi.draw_sprite(zombie.death_sprite.sprite)
 
     def process_medikit(self):
 
         if self.medikit.is_visible:
-            self.stageUi.draw_sprite(self.medikit.sprite)
+            self.draw_sprite(self.medikit.sprite)
             if self.medikit.sprite.collide_with(self.player.selected_sprite):
                 self.player.recover(self.medikit.heal)
                 self.medikit.hide()

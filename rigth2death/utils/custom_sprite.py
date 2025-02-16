@@ -128,6 +128,9 @@ class CustomSprite(pygame.sprite.Sprite):
     def get_image(self) -> pygame.Surface:
         return self.image
 
+    def get_rect(self) -> pygame.Rect:
+        return self.rect
+
 
 def load_image(file_name):
     if os.path.isfile(file_name):

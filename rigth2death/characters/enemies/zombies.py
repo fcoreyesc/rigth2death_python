@@ -28,7 +28,7 @@ class Zombie(ABC):
         self.health = Health(life=health)
         self.selected_strategy = "basic"
         self.last_movements = []
-        self.sprite = None
+        self.sprite: CustomSprite = None
         self.death_sprite = None
         self.move_list: list = []
         self.sum_refresh = 0
@@ -46,13 +46,6 @@ class Zombie(ABC):
         else:
             self.sprite.x(random.randrange(0, 2) * width)
             self.sprite.y(random.randrange(0, height))
-
-        self.update_sprite_parts_position()
-
-    def update_sprite_parts_position(self):
-        if (self.sprite_parts is not None):
-            for sprite_part in self.sprite_parts:
-                sprite_part.update_position(self.sprite.x(), self.sprite.y())
 
     def change_sprite(func):
         def wrapper(*args, **kwargs):
@@ -72,10 +65,10 @@ class Zombie(ABC):
         return wrapper
 
     @change_sprite
-    def move(self, player: CustomSprite, blockers, sprite_group):
+    def move(self, target: CustomSprite, blockers, sprite_group):
 
         if self.selected_strategy == 'basic':
-            self.basic_move_strategy(player)
+            self.basic_move_strategy(target)
             if self.sprite.rect.collidelist(blockers) != -1 or pygame.sprite.spritecollideany(self.sprite,
                                                                                               sprite_group):
                 self.selected_strategy = 'other'
@@ -152,8 +145,6 @@ class Zombie(ABC):
                 self.direction = DOWN
             self.sprite.y(self.sprite.y() + selected_speed)
 
-        self.update_sprite_parts_position()
-
     def last_move_strategy(self):
         previous_move = self.last_movements.pop()
         self.sprite.x(previous_move[0])
@@ -198,6 +189,53 @@ class Zombie(ABC):
 
     def get_pos_formatted(self):
         return f"({self.sprite.rect.x / 22},{self.sprite.rect.y / 20}) "
+
+    def check_collision(self, custom_sprite: CustomSprite) -> bool:
+        return self.sprite.collide_with(custom_sprite)
+
+    def set_position(self, x, y):
+        self.sprite.x(x)
+        self.sprite.y(y)
+
+
+class BossZombiePart():
+
+    def __init__(self, file_name: str, frames: int, scale: int, is_vertical: bool, refresh_time: int, offset_x=0,
+                 offset_y=0):
+        self.offset_x = offset_x
+        self.offset_y = offset_y
+        self.movement_sprites = {
+            SpritesEnum.LEFT: CustomSprite(utils.img(file_name), frames=frames, is_vertical=is_vertical, scale=scale,
+                                           refresh_time=refresh_time),
+        }
+        self.sprite = self.movement_sprites.get(SpritesEnum.LEFT)
+
+    def update_position(self, x, y):
+        self.sprite.x(x + self.offset_x)
+        self.sprite.y(y + self.offset_y)
+
+
+class MultiSpriteZombie(Zombie):
+
+    def __init__(self, speed, health):
+        super().__init__(speed, health)
+        self.sprite_parts: list[BossZombiePart] = []
+
+    def select_initial_position(self, width, height):
+        super().select_initial_position(width, height)
+        self.update_sprite_parts_position()
+
+    def set_position(self, x, y):
+        super().set_position(x, y)
+        self.update_sprite_parts_position()
+
+    def calculate_direction(self, first_move: GridNode, second_move: GridNode, blockers):
+        super().calculate_direction(first_move, second_move, blockers)
+        self.update_sprite_parts_position()
+
+    def update_sprite_parts_position(self):
+        for sprite_part in self.sprite_parts:
+            sprite_part.update_position(self.sprite.x(), self.sprite.y())
 
 
 class NormalZombie(Zombie):
@@ -251,24 +289,7 @@ class AquaZombie(Zombie):
         self.sprite = self.movement_sprites.get(SpritesEnum.LEFT)
 
 
-class BossZombiePart():
-
-    def __init__(self, file_name: str, frames: int, scale: int, is_vertical: bool, refresh_time: int, offset_x=0,
-                 offset_y=0):
-        self.offset_x = offset_x
-        self.offset_y = offset_y
-        self.movement_sprites = {
-            SpritesEnum.LEFT: CustomSprite(utils.img(file_name), frames=frames, is_vertical=is_vertical, scale=scale,
-                                           refresh_time=refresh_time),
-        }
-        self.sprite = self.movement_sprites.get(SpritesEnum.LEFT)
-
-    def update_position(self, x, y):
-        self.sprite.x(x + self.offset_x)
-        self.sprite.y(y + self.offset_y)
-
-
-class BossZombie(Zombie):
+class BossZombie(MultiSpriteZombie):
 
     def __init__(self):
         super().__init__(health=1000, speed=3)

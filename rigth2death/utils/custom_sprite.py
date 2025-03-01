@@ -39,7 +39,7 @@ class CustomSprite(pygame.sprite.Sprite):
             self.original_height = self.images[0].get_height()
             self.original_width = self.images[0].get_width()
 
-        self.image = pygame.Surface.copy(self.images[0])
+        self.image:pygame.Surface = pygame.Surface.copy(self.images[0])
 
         self.current_image = 0
         self.rect = self.image.get_rect()

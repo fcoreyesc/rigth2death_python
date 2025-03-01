@@ -29,7 +29,7 @@ class Zombie(ABC):
         self.selected_strategy = "basic"
         self.last_movements = []
         self.sprite: CustomSprite = None
-        self.death_sprite = None
+        self.death_sprite:CustomSprite = None
         self.move_list: list = []
         self.sum_refresh = 0
         self.refresh_time = 10000
@@ -69,7 +69,7 @@ class Zombie(ABC):
 
         if self.selected_strategy == 'basic':
             self.basic_move_strategy(target)
-            if self.sprite.rect.collidelist(blockers) != -1 or pygame.sprite.spritecollideany(self.sprite,
+            if self.sprite.get_rect().collidelist(blockers) != -1 or pygame.sprite.spritecollideany(self.sprite,
                                                                                               sprite_group):
                 self.selected_strategy = 'other'
         else:
@@ -107,7 +107,6 @@ class Zombie(ABC):
             if (self.sprite.rect.right / 22 > first_move.x):
                 self.move_list.insert(0, first_move)
 
-        # criteria for down movement
         if self.direction == DOWN:
             if self.sprite.rect.centery / 20 < second_move.y:
                 self.move_list.insert(0, first_move)

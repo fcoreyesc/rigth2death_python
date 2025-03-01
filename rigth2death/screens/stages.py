@@ -58,19 +58,16 @@ class StageUI:
     def clear_display(self):
         self.screen.fill((0, 0, 0))
 
-    def animate_death(self, player: Player):
-        self.screen.blit(player.get_image(), self.camera.apply(player.get_sprite()))
+    def draw_sprite(self, sprite: CustomSprite) -> None:
+        self.screen.blit(sprite.get_image(), self.camera.apply(sprite.get_rect()))
+
+    def draw_element(self, surface: Surface, rect: pygame.Rect) -> None:
+        self.screen.blit(surface, rect)
 
     def move_camera_and_paint_background(self, player: Player, image_map: Surface):
         self.camera.update(player.get_sprite().get_rect())
         self.screen.blit(image_map, self.camera.apply_rect(image_map.get_rect()))
-        self.screen.blit(player.get_image(), self.camera.apply(player.get_sprite()))
-
-    def draw_sprite(self, sprite: CustomSprite) -> None:
-        self.screen.blit(sprite.get_image(), self.camera.apply(sprite))
-
-    def draw_element(self, surface: Surface, rect: pygame.Rect) -> None:
-        self.screen.blit(surface, rect)
+        self.draw_sprite(player.get_sprite())
 
 
 class EnemyBehaviour:
@@ -139,7 +136,7 @@ class Stage:
 
     @display_refresh(fps=30)
     def animate_end_game(self):
-        self.stageUi.animate_death(self.player)
+        self.stageUi.draw_sprite(self.player)
 
     @display_refresh(fps=60)
     def game_loop(self):
@@ -148,14 +145,14 @@ class Stage:
         self.process_player_moves()
         self.process_player_collisions()
 
-        self.stageUi.move_camera_and_paint_background(self.player, self.image_map)
         self.process_medikit()
+        self.move_camera()
 
         self.process_death_zombies()
         self.process_zombies()
 
         self.process_shoots()
-        self.stageUi.draw_other_stuffs(self.life_sprite)
+        self.process_other_elements()
 
     def process_user_input(self):
         for event in pygame.event.get():
@@ -222,16 +219,19 @@ class Stage:
             else:
                 self.bullets.remove(bullet)
 
+    def process_other_elements(self):
+        self.stageUi.draw_other_stuffs(self.life_sprite)
+
     def process_zombies(self) -> None:
 
         for zombie in self.zombies:
             if len(zombie.move_list) <= 1:
                 self.global_time = time.time()
                 self.grid.cleanup()
-                end = self.grid.node(self.player.get_sprite().rect.centerx // self.map.tmx_data.tilewidth,
+                end = self.grid.node(self.player.get_sprite().get_rect().centerx // self.map.tmx_data.tilewidth,
                                      self.player.get_sprite().rect.centery // self.map.tmx_data.tileheight)
 
-                x = zombie.sprite.rect.centerx // self.map.tmx_data.tilewidth
+                x = zombie.sprite.get_rect().centerx // self.map.tmx_data.tilewidth
                 y = zombie.sprite.rect.centery // self.map.tmx_data.tileheight
 
                 try:
@@ -249,6 +249,9 @@ class Stage:
             self.process_player_damage(zombie)
             self.display_zombie_in_view(zombie)
             self.process_zombie_damage(zombie)
+
+    def move_camera(self):
+        self.stageUi.move_camera_and_paint_background(self.player, self.image_map)
 
     def display_zombie_in_view(self, zombie):
         player_tuple: tuple = (self.player.get_sprite().rect.x,
@@ -299,7 +302,7 @@ class Stage:
                 continue
 
             zombie.play()
-            self.stageUi.draw_sprite(zombie.death_sprite.sprite)
+            self.stageUi.draw_sprite(zombie.death_sprite)
 
     def process_medikit(self):
 

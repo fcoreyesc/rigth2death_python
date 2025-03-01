@@ -1,3 +1,4 @@
+import pygame
 from pygame import K_LCTRL
 from pygame.constants import K_RIGHT, K_LEFT, K_DOWN, K_UP, K_SPACE
 
@@ -103,12 +104,12 @@ class Player:
             self.recover_observer(times)
 
     def is_alive(self):
-        return not (self.health.is_dead())
+        return not self.health.is_dead()
 
     def is_dead(self):
         return self.health.is_dead()
 
-    def get_image(self):
+    def get_image(self) -> pygame.Surface:
         return self.selected_sprite.image if self.is_alive() else self.death_sprite.image
 
     def get_sprite(self) -> CustomSprite:

@@ -10,8 +10,8 @@ class Camera:
         self.width: int = width
         self.height: int = height
 
-    def apply(self, entity: CustomSprite) -> pygame.Rect:
-        return entity.rect.move(self.rectangle.topleft)
+    def apply(self, rect: pygame.Rect) -> pygame.Rect:
+        return rect.move(self.rectangle.topleft)
 
     def apply_rect(self, rect: pygame.Rect) -> pygame.Rect:
         return rect.move(self.rectangle.topleft)

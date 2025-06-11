@@ -51,9 +51,7 @@ class StageUI:
         return self.screen
 
     def draw_other_stuffs(self, life_sprite: LifeSprite):
-        self.screen.blit(life_sprite.sprite.image, (constants.WIDTH - life_sprite.sprite.original_width, 0))
-
-    #        self.draw_active_cell()
+        self.screen.blit(life_sprite.sprite.image, (constants.WIDTH - life_sprite.sprite.original_width, 0))  
 
     def clear_display(self):
         self.screen.fill((0, 0, 0))
@@ -136,7 +134,7 @@ class Stage:
 
     @display_refresh(fps=30)
     def animate_end_game(self):
-        self.stageUi.draw_sprite(self.player)
+        self.stageUi.draw_sprite(self.player.get_sprite())
 
     @display_refresh(fps=60)
     def game_loop(self):
@@ -145,8 +143,8 @@ class Stage:
         self.process_player_moves()
         self.process_player_collisions()
 
-        self.process_medikit()
         self.move_camera()
+        self.process_medikit()
 
         self.process_death_zombies()
         self.process_zombies()
@@ -169,12 +167,7 @@ class Stage:
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 self.mouse_events(event)
 
-    @debug()
-    def mouse_events(self, event):
-        if event.button == 1:
-            self.click = True
-        elif event.button == 3:
-            self.freeze = not self.freeze
+
 
     def process_player_moves(self):
         if len(self.moves) > 0:
@@ -226,21 +219,7 @@ class Stage:
 
         for zombie in self.zombies:
             if len(zombie.move_list) <= 1:
-                self.global_time = time.time()
-                self.grid.cleanup()
-                end = self.grid.node(self.player.get_sprite().get_rect().centerx // self.map.tmx_data.tilewidth,
-                                     self.player.get_sprite().rect.centery // self.map.tmx_data.tileheight)
-
-                x = zombie.sprite.get_rect().centerx // self.map.tmx_data.tilewidth
-                y = zombie.sprite.rect.centery // self.map.tmx_data.tileheight
-
-                try:
-                    start = self.grid.node(x if x < self.map.tmx_data.width else self.map.tmx_data.width - 1,
-                                           y if y < self.map.tmx_data.height else self.map.tmx_data.height - 1)
-                except IndexError:
-                    logging.debug("quedo la caga ")
-                paths, _ = self.finder.find_path(start, end, self.grid)
-                zombie.move_list = paths
+                zombie.move_list = self.calculate_zombie_path(zombie)
 
             if self.freeze:
                 zombie.path_move(self.map.blockers)
@@ -249,6 +228,18 @@ class Stage:
             self.process_player_damage(zombie)
             self.display_zombie_in_view(zombie)
             self.process_zombie_damage(zombie)
+
+    def calculate_zombie_path(self, zombie):
+        self.global_time = time.time()
+        self.grid.cleanup()
+        end = self.grid.node(self.player.get_sprite().get_rect().centerx // self.map.tmx_data.tilewidth,
+                             self.player.get_sprite().rect.centery // self.map.tmx_data.tileheight)
+        x = zombie.sprite.get_rect().centerx // self.map.tmx_data.tilewidth
+        y = zombie.sprite.rect.centery // self.map.tmx_data.tileheight
+        start = self.grid.node(x if x < self.map.tmx_data.width else self.map.tmx_data.width - 1,
+                               y if y < self.map.tmx_data.height else self.map.tmx_data.height - 1)
+        paths, _ = self.finder.find_path(start, end, self.grid)
+        return paths
 
     def move_camera(self):
         self.stageUi.move_camera_and_paint_background(self.player, self.image_map)
@@ -284,14 +275,14 @@ class Stage:
                     self.zombies.remove(zombie)
 
     def zombie_is_visible_for_player(self, player: tuple, zombie: tuple, direction: int) -> bool:
-        # if direction == K_RIGHT:
-        #     return player[0] <= zombie[0] and abs(player[1] - zombie[1]) < player[2]
-        # elif direction == K_LEFT:
-        #     return player[0] >= zombie[0] and abs(player[1] - zombie[1]) < player[2]
-        # elif direction == K_UP:
-        #     return player[1] >= zombie[1] and abs(player[0] - zombie[0]) < player[3]
-        # elif direction == K_DOWN:
-        #     return player[1] >= zombie[1] and abs(player[0] - zombie[0]) < player[3]
+        if direction == K_RIGHT:
+            return player[0] <= zombie[0] and abs(player[1] - zombie[1]) < player[2]
+        elif direction == K_LEFT:
+            return player[0] >= zombie[0] and abs(player[1] - zombie[1]) < player[2]
+        elif direction == K_UP:
+            return player[1] >= zombie[1] and abs(player[0] - zombie[0]) < player[3]
+        elif direction == K_DOWN:
+            return player[1] >= zombie[1] and abs(player[0] - zombie[0]) < player[3]
         return True
 
     def process_death_zombies(self) -> None:
@@ -316,18 +307,6 @@ class Stage:
             self.medikit.select_position(self.map.blockers)
             self.medikit.sprite.play()
 
-    @debug()
-    def draw_active_cell(self):
-        mouse_pos = pygame.mouse.get_pos()
-        rect, gap = self.fixing_position(mouse_pos)
-
-        if self.click:
-            logging.debug(
-                f' mouse {mouse_pos} -- row col ({gap[3]},{gap[2]}) --  {rect} {self.stageUi.get_camera().rectangle}')
-            self.click = False
-
-        self.stageUi.draw_element(self.select_surf2, rect)
-
     def fixing_position(self, positions):
         gap_x = self.stageUi.get_camera().rectangle.x % self.map.tmx_data.tilewidth
         gap_y = self.stageUi.get_camera().rectangle.y % self.map.tmx_data.tileheight
@@ -341,6 +320,24 @@ class Stage:
         rect.centery += gap_y
 
         return rect, (gap_y, gap_x, row, col)
+
+
+class DebugStage(Stage):
+
+    def __init__(self, allowed_moves=(K_LEFT, K_RIGHT, K_UP, K_DOWN, K_SPACE, K_LCTRL)):
+        super().__init__(allowed_moves)
+
+    @debug()
+    def draw_active_cell(self):
+        mouse_pos = pygame.mouse.get_pos()
+        rect, gap = self.fixing_position(mouse_pos)
+
+        if self.click:
+            logging.debug(
+                f' mouse {mouse_pos} -- row col ({gap[3]},{gap[2]}) --  {rect} {self.stageUi.get_camera().rectangle}')
+            self.click = False
+
+        self.stageUi.draw_element(self.select_surf2, rect)
 
     @debug()
     def draw_zombie_path(self, paths: list):
@@ -356,3 +353,10 @@ class Stage:
 
             if len(points) > 1:
                 pygame.draw.lines(self.stageUi.get_screen(), '#ff0000', False, points, 5)
+
+    @debug()
+    def mouse_events(self, event):
+        if event.button == 1:
+            self.click = True
+        elif event.button == 3:
+            self.freeze = not self.freeze

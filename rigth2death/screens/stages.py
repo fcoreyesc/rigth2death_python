@@ -224,7 +224,7 @@ class Stage:
             if self.freeze:
                 zombie.path_move(self.map.blockers)
 
-            self.draw_zombie_path(zombie.move_list)
+            #self.draw_zombie_path(zombie.move_list)
             self.process_player_damage(zombie)
             self.display_zombie_in_view(zombie)
             self.process_zombie_damage(zombie)

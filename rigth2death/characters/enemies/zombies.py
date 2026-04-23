@@ -28,8 +28,8 @@ class Zombie(ABC):
         self.health = Health(life=health)
         self.selected_strategy = "basic"
         self.last_movements = []
-        self.sprite = None
-        self.death_sprite = None
+        self.sprite: CustomSprite = None
+        self.death_sprite:CustomSprite = None
         self.move_list: list = []
         self.sum_refresh = 0
         self.refresh_time = 10000
@@ -37,6 +37,7 @@ class Zombie(ABC):
         self.direction = None
         self.is_blocked = False
         self.colision_rect = None
+        self.sprite_parts = []
 
     def select_initial_position(self, width, height):
         if random.randrange(0, 2) == 0:
@@ -64,11 +65,11 @@ class Zombie(ABC):
         return wrapper
 
     @change_sprite
-    def move(self, player: CustomSprite, blockers, sprite_group):
+    def move(self, target: CustomSprite, blockers, sprite_group):
 
         if self.selected_strategy == 'basic':
-            self.basic_move_strategy(player)
-            if self.sprite.rect.collidelist(blockers) != -1 or pygame.sprite.spritecollideany(self.sprite,
+            self.basic_move_strategy(target)
+            if self.sprite.get_rect().collidelist(blockers) != -1 or pygame.sprite.spritecollideany(self.sprite,
                                                                                               sprite_group):
                 self.selected_strategy = 'other'
         else:
@@ -106,7 +107,6 @@ class Zombie(ABC):
             if (self.sprite.rect.right / 22 > first_move.x):
                 self.move_list.insert(0, first_move)
 
-        # criteria for down movement
         if self.direction == DOWN:
             if self.sprite.rect.centery / 20 < second_move.y:
                 self.move_list.insert(0, first_move)
@@ -115,7 +115,8 @@ class Zombie(ABC):
             if self.sprite.rect.centery / 20 > second_move.y:
                 self.move_list.insert(0, first_move)
             else:
-                logging.debug(f" {first_move.x},{first_move.y} {second_move.x},{second_move.y} {self.sprite.rect.y / 20} ")
+                logging.debug(
+                    f" {first_move.x},{first_move.y} {second_move.x},{second_move.y} {self.sprite.rect.y / 20} ")
 
     def calculate_direction(self, first_move: GridNode, second_move: GridNode, blockers):
         selected_speed = self.speed
@@ -142,18 +143,6 @@ class Zombie(ABC):
             else:
                 self.direction = DOWN
             self.sprite.y(self.sprite.y() + selected_speed)
-
-    def predict_move(self):
-        pass
-
-    def check_colision(self):
-        pass
-
-    def handle_collision(self):
-        pass
-
-    def update_movement_list(self):
-        pass
 
     def last_move_strategy(self):
         previous_move = self.last_movements.pop()
@@ -190,12 +179,62 @@ class Zombie(ABC):
             self.death_sprite.play()
         else:
             self.sprite.play()
+            if self.sprite_parts is not None:
+                for sprite_part in self.sprite_parts:
+                    sprite_part.sprite.play()
 
     def is_death_animation_complete(self):
         return self.death_sprite.sequence == self.death_sprite.current_image + 1
 
     def get_pos_formatted(self):
         return f"({self.sprite.rect.x / 22},{self.sprite.rect.y / 20}) "
+
+    def check_collision(self, custom_sprite: CustomSprite) -> bool:
+        return self.sprite.collide_with(custom_sprite)
+
+    def set_position(self, x, y):
+        self.sprite.x(x)
+        self.sprite.y(y)
+
+
+class BossZombiePart():
+
+    def __init__(self, file_name: str, frames: int, scale: int, is_vertical: bool, refresh_time: int, offset_x=0,
+                 offset_y=0):
+        self.offset_x = offset_x
+        self.offset_y = offset_y
+        self.movement_sprites = {
+            SpritesEnum.LEFT: CustomSprite(utils.img(file_name), frames=frames, is_vertical=is_vertical, scale=scale,
+                                           refresh_time=refresh_time),
+        }
+        self.sprite = self.movement_sprites.get(SpritesEnum.LEFT)
+
+    def update_position(self, x, y):
+        self.sprite.x(x + self.offset_x)
+        self.sprite.y(y + self.offset_y)
+
+
+class MultiSpriteZombie(Zombie):
+
+    def __init__(self, speed, health):
+        super().__init__(speed, health)
+        self.sprite_parts: list[BossZombiePart] = []
+
+    def select_initial_position(self, width, height):
+        super().select_initial_position(width, height)
+        self.update_sprite_parts_position()
+
+    def set_position(self, x, y):
+        super().set_position(x, y)
+        self.update_sprite_parts_position()
+
+    def calculate_direction(self, first_move: GridNode, second_move: GridNode, blockers):
+        super().calculate_direction(first_move, second_move, blockers)
+        self.update_sprite_parts_position()
+
+    def update_sprite_parts_position(self):
+        for sprite_part in self.sprite_parts:
+            sprite_part.update_position(self.sprite.x(), self.sprite.y())
 
 
 class NormalZombie(Zombie):
@@ -247,6 +286,51 @@ class AquaZombie(Zombie):
             .flip(horizontal=True)
         }
         self.sprite = self.movement_sprites.get(SpritesEnum.LEFT)
+
+
+class BossZombie(MultiSpriteZombie):
+
+    def __init__(self):
+        super().__init__(health=1000, speed=3)
+        self.death_sprite: CustomSprite = CustomSprite(utils.img('boss_zombie_death.png'),
+                                                       9,
+                                                       is_vertical=False,
+                                                       refresh_time=120)
+        self.movement_sprites = {
+            SpritesEnum.LEFT: CustomSprite(utils.img('boss_basic.png'), 3, scale=2, is_vertical=False,
+                                           refresh_time=150),
+            SpritesEnum.RIGHT: CustomSprite(utils.img('boss_basic.png'), 3, scale=2, is_vertical=False,
+                                            refresh_time=150)
+        }
+        self.sprite = self.movement_sprites.get(SpritesEnum.LEFT)
+        self.sprite_parts.append(
+            BossZombiePart(file_name="boss_base.png",
+                           frames=6,
+                           scale=1.5,
+                           is_vertical=True,
+                           refresh_time=150,
+                           offset_x=40,
+                           offset_y=55)
+        )
+        self.sprite_parts.append(
+            BossZombiePart(file_name="boss_left_hand.png",
+                           frames=5,
+                           scale=1.5,
+                           is_vertical=False,
+                           refresh_time=150,
+                           offset_x=-5,
+                           offset_y=55)
+        )
+        self.sprite_parts.append(
+            BossZombiePart(file_name="boss_right_hand.png",
+                           frames=5,
+                           scale=1.5,
+                           is_vertical=False,
+                           refresh_time=150,
+                           offset_x=100,
+                           offset_y=55)
+
+        )
 
 
 class ZombieFactory:

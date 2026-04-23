@@ -93,14 +93,13 @@ class Bullet:
             self.move_function = self._move_y
             self.sprite.flip(horizontal=False, vertical=True, rotate=True)
 
-        self.sprite.rect.x = self.positions[self.direction][0]
-        self.sprite.rect.y = self.positions[self.direction][1]
+        self.sprite.move(self.positions[self.direction][0], self.positions[self.direction][1])
 
     def _move_x(self, x):
-        self.sprite.rect.x += x
+        self.sprite.x(x + self.sprite.x())
 
     def _move_y(self, y):
-        self.sprite.rect.y += y
+        self.sprite.y(y + self.sprite.y())
 
     def move(self):
         self.move_function(self.velocity)

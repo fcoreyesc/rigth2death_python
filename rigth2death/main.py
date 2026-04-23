@@ -27,4 +27,5 @@ if __name__ == '__main__':
     if constants.DEBUG_MODE:
         logging.basicConfig(level=logging.DEBUG)
 
+    print("hola")
     run()

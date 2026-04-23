@@ -23,7 +23,7 @@ class Player:
 
         self.current_k_sprite = K_RIGHT
         self.selected_sprite = self.movement_sprites.get(self.current_k_sprite)
-        self.selected_sprite.move(520, 345)
+        self.selected_sprite.move(390, 767)
         self.speed = 4
         self.health: Health = Health()
         self.no_damage_timer = 100
@@ -45,14 +45,11 @@ class Player:
         if selected_sprite is None:
             return
 
-        self.last_movements.append((self.selected_sprite.rect.x, self.selected_sprite.rect.y))
+        self.last_movements.append((self.selected_sprite.x(), self.selected_sprite.y()))
 
         if key != self.current_k_sprite:
             self.current_k_sprite = key
-
-            selected_sprite.rect.x = self.selected_sprite.x()
-            selected_sprite.rect.y = self.selected_sprite.y()
-
+            selected_sprite.move_to_sprite(self.selected_sprite)
             self.selected_sprite = selected_sprite
 
         if key == K_UP:
@@ -91,8 +88,7 @@ class Player:
             self.damage_observer(times)
 
         if self.is_dead():
-            self.death_sprite.x(self.selected_sprite.x())
-            self.death_sprite.y(self.selected_sprite.y())
+            self.death_sprite.move_to_sprite(self.selected_sprite)
 
     def recover(self, health_points: int) -> None:
         if self.health.is_life_full():
@@ -108,12 +104,12 @@ class Player:
             self.recover_observer(times)
 
     def is_alive(self):
-        return not (self.health.is_dead())
+        return not self.health.is_dead()
 
     def is_dead(self):
         return self.health.is_dead()
 
-    def get_image(self):
+    def get_image(self) -> pygame.Surface:
         return self.selected_sprite.image if self.is_alive() else self.death_sprite.image
 
     def get_sprite(self) -> CustomSprite:
@@ -121,12 +117,3 @@ class Player:
 
     def get_mask(self):
         return self.selected_sprite.get_mask()
-
-
-def flip(param: CustomSprite, horizontal=False, vertical=False):
-    new_images = []
-    for img in param.images:
-        new_images.append(pygame.transform.flip(img, horizontal, vertical))
-
-    param.image = new_images[0]
-    param.images = new_images

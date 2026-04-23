@@ -39,7 +39,7 @@ class CustomSprite(pygame.sprite.Sprite):
             self.original_height = self.images[0].get_height()
             self.original_width = self.images[0].get_width()
 
-        self.image = pygame.Surface.copy(self.images[0])
+        self.image:pygame.Surface = pygame.Surface.copy(self.images[0])
 
         self.current_image = 0
         self.rect = self.image.get_rect()
@@ -56,6 +56,10 @@ class CustomSprite(pygame.sprite.Sprite):
     def move(self, xpos: int, ypos: int):
         self.rect.x = xpos
         self.rect.y = ypos
+
+    def move_to_sprite(self, source_sprite: 'CustomSprite'):
+        self.rect.x = source_sprite.x()
+        self.rect.y = source_sprite.y()
 
     def play(self):
         refresh_time = int(round(time.time() * 1000)) - self.sum_refresh
@@ -120,6 +124,12 @@ class CustomSprite(pygame.sprite.Sprite):
 
     def get_mask(self) -> pygame.mask.Mask:
         return pygame.mask.from_surface(self.image)
+
+    def get_image(self) -> pygame.Surface:
+        return self.image
+
+    def get_rect(self) -> pygame.Rect:
+        return self.rect
 
 
 def load_image(file_name):
